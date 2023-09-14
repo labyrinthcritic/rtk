@@ -1,4 +1,5 @@
 use nalgebra::{constraint::SameNumberOfColumns, Vector3};
+use rand::Rng;
 
 use crate::object::World;
 
@@ -38,6 +39,7 @@ pub struct Renderer {
     viewport_upper_left: Vector3<f64>,
     // "pixel00_loc" in the tutorial
     pixel_origin: Vector3<f64>,
+    samples_per_pixel: u32,
 }
 
 impl Renderer {
@@ -79,6 +81,7 @@ impl Renderer {
             pixel_delta_v,
             viewport_upper_left,
             pixel_origin,
+            samples_per_pixel: 100,
         }
     }
 
@@ -102,17 +105,40 @@ impl Renderer {
                     + (j as f64 * self.pixel_delta_v);
                 let ray_direction = pixel_center - self.camera_center;
 
-                let ray = Ray {
-                    origin: self.camera_center,
-                    direction: ray_direction,
-                };
+                let mut pixel_color = Color::zeros();
 
-                let pixel_color = self.ray_color(world, &ray);
+                for _ in 0..self.samples_per_pixel {
+                    let ray = self.get_ray(i, j);
+                    pixel_color += self.ray_color(world, &ray);
+                }
 
+                pixel_color /= self.samples_per_pixel as f64;
                 *image.pixel(i, j) = crate::image::Color::from_float_vector(&pixel_color);
             }
         }
 
         image
+    }
+
+    /// Get a randomly sampled camera ray for the pixel at location (i, j).
+    fn get_ray(&self, i: u32, j: u32) -> Ray {
+        let pixel_center =
+            self.pixel_origin + (i as f64 * self.pixel_delta_u) + (j as f64 * self.pixel_delta_v);
+        let pixel_sample = pixel_center + self.pixel_sample_square();
+
+        let ray_direction = pixel_sample - self.camera_center;
+
+        Ray {
+            origin: self.camera_center,
+            direction: ray_direction,
+        }
+    }
+
+    fn pixel_sample_square(&self) -> Vector3<f64> {
+        let mut thread_rng = rand::thread_rng();
+        let px = -0.5 + thread_rng.gen_range(0.0..1.0);
+        let py = -0.5 + thread_rng.gen_range(0.0..1.0);
+
+        (px * self.pixel_delta_u) + (py * self.pixel_delta_v)
     }
 }
