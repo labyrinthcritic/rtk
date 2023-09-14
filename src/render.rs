@@ -1,4 +1,4 @@
-use nalgebra::Vector3;
+use nalgebra::{constraint::SameNumberOfColumns, Vector3};
 
 pub struct Ray {
     origin: Vector3<f64>,
@@ -81,6 +81,13 @@ impl Renderer {
     }
 
     pub fn ray_color(&self, ray: &Ray) -> Color {
+        let t = hit_sphere(&Vector3::new(0.0, 0.0, -1.0), 0.5, &ray);
+
+        if let Some(t) = t {
+            let n = (ray.at(t) - Vector3::new(0.0, 0.0, -1.0)).normalize();
+            return 0.5 * Color::new(n[0] + 1.0, n[1] + 1.0, n[2] + 1.0);
+        }
+
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction[1] + 1.0);
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
@@ -108,5 +115,21 @@ impl Renderer {
         }
 
         image
+    }
+}
+
+/// Finds the time at which the ray will hit the sphere, or `None` if it will not.
+fn hit_sphere(center: &Vector3<f64>, radius: f64, ray: &Ray) -> Option<f64> {
+    // quadratic formula
+    let oc = ray.origin - center;
+    let a = ray.direction.dot(&ray.direction);
+    let b = 2.0 * oc.dot(&ray.direction);
+    let c = oc.dot(&oc) - radius.powi(2);
+    let discriminant = b.powi(2) - 4.0 * a * c;
+
+    if discriminant < 0.0 {
+        None
+    } else {
+        Some((-b - discriminant.sqrt()) / (2.0 * a))
     }
 }
