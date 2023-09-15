@@ -1,20 +1,24 @@
 #![allow(unused)]
 
 mod image;
+mod material;
 mod object;
 mod render;
 
-use std::thread;
+use std::{rc::Rc, thread};
 
 use image::{Color, Image};
 use nalgebra::Vector3;
 use render::Renderer;
 
-use crate::object::{Object, World};
+use crate::{
+    material::Material,
+    object::{Object, World},
+};
 
 fn main() {
-    let width = 400;
-    let height = 225;
+    let width = 640;
+    let height = 480;
 
     let (renderer, progress_receiver) = Renderer::new(width, height);
 
@@ -35,15 +39,32 @@ fn main() {
 }
 
 fn render(renderer: Renderer) -> Image {
+    let material_ground = Material::diffuse(0.8, 0.8, 0.0);
+    let material_center = Material::dielectric(1.5);
+    let material_left = Material::dielectric(1.5);
+    let material_right = Material::metal(0.8, 0.6, 0.2);
+
     let world = World {
         objects: vec![
             Object::Sphere {
-                origin: Vector3::new(0.0, 0.0, -1.0),
-                radius: 0.5,
-            },
-            Object::Sphere {
                 origin: Vector3::new(0.0, -100.5, -1.0),
                 radius: 100.0,
+                material: Rc::new(material_ground),
+            },
+            Object::Sphere {
+                origin: Vector3::new(0.0, 0.0, -1.0),
+                radius: 0.5,
+                material: Rc::new(material_center),
+            },
+            Object::Sphere {
+                origin: Vector3::new(-1.0, 0.0, -1.0),
+                radius: 0.5,
+                material: Rc::new(material_left),
+            },
+            Object::Sphere {
+                origin: Vector3::new(1.0, 0.0, -1.0),
+                radius: 0.5,
+                material: Rc::new(material_right),
             },
         ],
     };

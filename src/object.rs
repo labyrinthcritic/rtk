@@ -1,8 +1,8 @@
-use std::ops::Range;
+use std::{ops::Range, rc::Rc};
 
 use nalgebra::Vector3;
 
-use crate::render::Ray;
+use crate::{material::Material, render::Ray};
 
 pub struct World {
     pub objects: Vec<Object>,
@@ -25,13 +25,21 @@ impl World {
 }
 
 pub enum Object {
-    Sphere { origin: Vector3<f64>, radius: f64 },
+    Sphere {
+        origin: Vector3<f64>,
+        radius: f64,
+        material: Rc<Material>,
+    },
 }
 
 impl Object {
     pub fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<Hit> {
         match self {
-            Object::Sphere { origin, radius } => hit_sphere(origin, *radius, ray, ray_t),
+            Object::Sphere {
+                origin,
+                radius,
+                material,
+            } => hit_sphere(origin, *radius, ray, ray_t, Rc::clone(material)),
         }
     }
 }
@@ -45,10 +53,18 @@ pub struct Hit {
     pub t: f64,
     /// Whether the normal points outward or inward.
     pub front_face: bool,
+    /// The material of the struck object.
+    pub material: Rc<Material>,
 }
 
 /// Finds the time at which a ray will hit a sphere, or returns `None` if it will not.
-fn hit_sphere(center: &Vector3<f64>, radius: f64, ray: &Ray, ray_t: Range<f64>) -> Option<Hit> {
+fn hit_sphere(
+    center: &Vector3<f64>,
+    radius: f64,
+    ray: &Ray,
+    ray_t: Range<f64>,
+    material: Rc<Material>,
+) -> Option<Hit> {
     // Quadratic formula
     let oc = ray.origin - center;
     let a = ray.direction.magnitude_squared();
@@ -82,6 +98,7 @@ fn hit_sphere(center: &Vector3<f64>, radius: f64, ray: &Ray, ray_t: Range<f64>) 
         normal,
         t,
         front_face,
+        material,
     })
 }
 

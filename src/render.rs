@@ -103,17 +103,10 @@ impl Renderer {
         }
 
         if let Some(hit) = world.hit(ray, 0.001, f64::INFINITY) {
-            // Randomly generate a vector accoring to lambertian distribution
-            let new_direction = hit.normal + random_unit_vector();
-            return 0.5
-                * self.ray_color(
-                    world,
-                    &Ray {
-                        origin: hit.p,
-                        direction: new_direction,
-                    },
-                    depth - 1,
-                );
+            if let Some((attenuation, scattered)) = hit.material.scatter(ray, &hit) {
+                return attenuation.component_mul(&self.ray_color(world, &scattered, depth - 1));
+            }
+            return Color::zeros();
         }
 
         let unit_direction = ray.direction.normalize();
@@ -194,7 +187,12 @@ fn linear_to_gamma(linear_color: &Vector3<f64>) -> Vector3<f64> {
     )
 }
 
-fn random_vector() -> Vector3<f64> {
+pub fn vector_near_zero(v: &Vector3<f64>) -> bool {
+    const S: f64 = 1e-8;
+    (v.x.abs() < S) && (v.y.abs() < S) && (v.z.abs() < S)
+}
+
+pub fn random_vector() -> Vector3<f64> {
     let mut thread_rng = rand::thread_rng();
     Vector3::new(
         thread_rng.gen_range(0.0..1.0),
@@ -203,7 +201,7 @@ fn random_vector() -> Vector3<f64> {
     )
 }
 
-fn random_vector_range(range: Range<f64>) -> Vector3<f64> {
+pub fn random_vector_range(range: Range<f64>) -> Vector3<f64> {
     let mut thread_rng = rand::thread_rng();
     Vector3::new(
         thread_rng.gen_range(range.clone()),
@@ -212,7 +210,7 @@ fn random_vector_range(range: Range<f64>) -> Vector3<f64> {
     )
 }
 
-fn random_vector_in_unit_sphere() -> Vector3<f64> {
+pub fn random_vector_in_unit_sphere() -> Vector3<f64> {
     loop {
         let vec = random_vector_range(-1.0..1.0);
         if vec.magnitude_squared() <= 1.0 {
@@ -221,11 +219,11 @@ fn random_vector_in_unit_sphere() -> Vector3<f64> {
     }
 }
 
-fn random_unit_vector() -> Vector3<f64> {
+pub fn random_unit_vector() -> Vector3<f64> {
     random_vector_in_unit_sphere().normalize()
 }
 
-fn random_unit_vector_on_hemisphere(normal: &Vector3<f64>) -> Vector3<f64> {
+pub fn random_unit_vector_on_hemisphere(normal: &Vector3<f64>) -> Vector3<f64> {
     let vec = random_unit_vector();
     if vec.dot(normal) > 0.0 {
         vec
