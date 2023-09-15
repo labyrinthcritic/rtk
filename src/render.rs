@@ -89,13 +89,15 @@ impl Renderer {
         }
     }
 
+    /// Get the precise color of any ray in the world.
     pub fn ray_color(&self, world: &World, ray: &Ray, depth: u32) -> Color {
         if depth == 0 {
             return Color::zeros();
         }
 
         if let Some(hit) = world.hit(ray, 0.001, f64::INFINITY) {
-            let new_direction = random_unit_vector_on_hemisphere(&hit.normal);
+            // Randomly generate a vector accoring to lambertian distribution
+            let new_direction = hit.normal + random_unit_vector();
             return 0.5
                 * self.ray_color(
                     world,
@@ -108,10 +110,11 @@ impl Renderer {
         }
 
         let unit_direction = ray.direction.normalize();
-        let a = 0.5 * (unit_direction[1] + 1.0);
+        let a = 0.5 * (unit_direction.y + 1.0);
         (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
     }
 
+    /// Render a complete world, casting several rays for each pixel and collecting them into a complete image.
     pub fn render(&self, world: &World) -> crate::image::Image {
         let mut image = crate::image::Image::new(self.image_width, self.image_height);
 
@@ -129,7 +132,11 @@ impl Renderer {
                     pixel_color += self.ray_color(world, &ray, self.max_ray_bounces);
                 }
 
+                // Divide to compute the average color between all samples
                 pixel_color /= self.samples_per_pixel as f64;
+                // Gamma correct
+                pixel_color = linear_to_gamma(&pixel_color);
+
                 *image.pixel(i, j) = crate::image::Color::from_float_vector(&pixel_color);
             }
         }
@@ -159,6 +166,14 @@ impl Renderer {
 
         (px * self.pixel_delta_u) + (py * self.pixel_delta_v)
     }
+}
+
+fn linear_to_gamma(linear_color: &Vector3<f64>) -> Vector3<f64> {
+    Vector3::new(
+        linear_color.x.sqrt(),
+        linear_color.y.sqrt(),
+        linear_color.z.sqrt(),
+    )
 }
 
 fn random_vector() -> Vector3<f64> {

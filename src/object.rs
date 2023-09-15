@@ -36,10 +36,14 @@ impl Object {
     }
 }
 
+/// Data surrounding a ray intersecting with an object.
 pub struct Hit {
+    /// The point at which the ray intersected the object.
     pub p: Vector3<f64>,
     pub normal: Vector3<f64>,
+    /// The time at which the intersection occurred.
     pub t: f64,
+    /// Whether the normal points outward or inward.
     pub front_face: bool,
 }
 
