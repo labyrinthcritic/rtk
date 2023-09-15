@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, sync::mpsc};
 
 use nalgebra::{constraint::SameNumberOfColumns, Vector3};
 use rand::Rng;
@@ -43,10 +43,11 @@ pub struct Renderer {
     pixel_origin: Vector3<f64>,
     samples_per_pixel: u32,
     max_ray_bounces: u32,
+    progress_sender: mpsc::Sender<u32>,
 }
 
 impl Renderer {
-    pub fn new(image_width: u32, image_height: u32) -> Self {
+    pub fn new(image_width: u32, image_height: u32) -> (Self, mpsc::Receiver<u32>) {
         const VIEWPORT_HEIGHT: f64 = 2.0;
 
         let aspect_ratio = image_width as f64 / image_height as f64;
@@ -70,23 +71,29 @@ impl Renderer {
             - viewport_v / 2.0;
         let pixel_origin = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
-        Self {
-            aspect_ratio,
-            image_width,
-            image_height,
-            viewport_width,
-            viewport_height,
-            focal_length,
-            camera_center,
-            viewport_u,
-            viewport_v,
-            pixel_delta_u,
-            pixel_delta_v,
-            viewport_upper_left,
-            pixel_origin,
-            samples_per_pixel: 100,
-            max_ray_bounces: 50,
-        }
+        let (sender, receiver) = mpsc::channel();
+
+        (
+            Self {
+                aspect_ratio,
+                image_width,
+                image_height,
+                viewport_width,
+                viewport_height,
+                focal_length,
+                camera_center,
+                viewport_u,
+                viewport_v,
+                pixel_delta_u,
+                pixel_delta_v,
+                viewport_upper_left,
+                pixel_origin,
+                samples_per_pixel: 100,
+                max_ray_bounces: 50,
+                progress_sender: sender,
+            },
+            receiver,
+        )
     }
 
     /// Get the precise color of any ray in the world.
@@ -118,6 +125,10 @@ impl Renderer {
     pub fn render(&self, world: &World) -> crate::image::Image {
         let mut image = crate::image::Image::new(self.image_width, self.image_height);
 
+        let total_pixels = self.image_width * self.image_height;
+        let mut pixels_completed = 0;
+        let mut progress = 0;
+
         for j in 0..self.image_height {
             for i in 0..self.image_width {
                 let pixel_center = self.pixel_origin
@@ -138,6 +149,13 @@ impl Renderer {
                 pixel_color = linear_to_gamma(&pixel_color);
 
                 *image.pixel(i, j) = crate::image::Color::from_float_vector(&pixel_color);
+
+                pixels_completed += 1;
+
+                if (pixels_completed * 100 / total_pixels) > progress {
+                    progress = pixels_completed * 100 / total_pixels;
+                    self.progress_sender.send(progress);
+                }
             }
         }
 
