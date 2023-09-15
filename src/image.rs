@@ -5,6 +5,7 @@ pub struct Image {
     pixels: Vec<Color>,
 }
 
+#[allow(dead_code)]
 impl Image {
     pub fn new(width: u32, height: u32) -> Self {
         Self {

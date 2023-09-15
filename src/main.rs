@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 mod image;
 mod material;
 mod object;
@@ -7,7 +5,7 @@ mod render;
 
 use std::{rc::Rc, thread};
 
-use image::{Color, Image};
+use image::Image;
 use nalgebra::{Unit, UnitQuaternion, Vector3};
 use render::Renderer;
 
@@ -80,8 +78,7 @@ fn render(renderer: Renderer) -> Image {
     };
 
     eprintln!("Rendering...");
-    let image = renderer.render(&world);
-    image
+    renderer.render(&world)
 }
 
 fn print_progress_bar(progress: u32) {

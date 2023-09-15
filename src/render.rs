@@ -1,6 +1,6 @@
 use std::{ops::Range, sync::mpsc};
 
-use nalgebra::{constraint::SameNumberOfColumns, UnitQuaternion, Vector3};
+use nalgebra::{UnitQuaternion, Vector3};
 use rand::Rng;
 
 use crate::object::World;
@@ -26,31 +26,20 @@ pub struct Camera {
 }
 
 pub struct Renderer {
-    aspect_ratio: f64,
     /// In pixels.
     image_width: u32,
     /// In pixels.
     image_height: u32,
-    /// In world units.
-    viewport_width: f64,
-    /// In world units.
-    viewport_height: f64,
-    /// The distance from the camera center to the viewport center.
-    /// This is always orthogonal to the viewport.
-    focal_length: f64,
-    camera_center: Vector3<f64>,
-    /// A vector from the left edge of the viewport to the right edge.
-    viewport_u: Vector3<f64>,
-    /// A vector from the top edge of the viewport to the bottom edge.
-    viewport_v: Vector3<f64>,
-    pixel_delta_u: Vector3<f64>,
-    pixel_delta_v: Vector3<f64>,
-    viewport_upper_left: Vector3<f64>,
-    // "pixel00_loc" in the tutorial
-    pixel_origin: Vector3<f64>,
+
     samples_per_pixel: u32,
     max_ray_bounces: u32,
     progress_sender: mpsc::Sender<u32>,
+
+    // values computed from camera and viewport
+    camera_center: Vector3<f64>,
+    pixel_delta_u: Vector3<f64>,
+    pixel_delta_v: Vector3<f64>,
+    pixel_origin: Vector3<f64>,
 }
 
 impl Renderer {
@@ -83,18 +72,11 @@ impl Renderer {
 
         (
             Self {
-                aspect_ratio,
                 image_width,
                 image_height,
-                viewport_width,
-                viewport_height,
-                focal_length,
                 camera_center,
-                viewport_u,
-                viewport_v,
                 pixel_delta_u,
                 pixel_delta_v,
-                viewport_upper_left,
                 pixel_origin,
                 samples_per_pixel: 100,
                 max_ray_bounces: 50,
@@ -132,11 +114,6 @@ impl Renderer {
 
         for j in 0..self.image_height {
             for i in 0..self.image_width {
-                let pixel_center = self.pixel_origin
-                    + (i as f64 * self.pixel_delta_u)
-                    + (j as f64 * self.pixel_delta_v);
-                let ray_direction = pixel_center - self.camera_center;
-
                 let mut pixel_color = Color::zeros();
 
                 for _ in 0..self.samples_per_pixel {
@@ -155,7 +132,7 @@ impl Renderer {
 
                 if (pixels_completed * 100 / total_pixels) > progress {
                     progress = pixels_completed * 100 / total_pixels;
-                    self.progress_sender.send(progress);
+                    self.progress_sender.send(progress).unwrap();
                 }
             }
         }
@@ -200,15 +177,6 @@ pub fn vector_near_zero(v: &Vector3<f64>) -> bool {
     (v.x.abs() < S) && (v.y.abs() < S) && (v.z.abs() < S)
 }
 
-pub fn random_vector() -> Vector3<f64> {
-    let mut thread_rng = rand::thread_rng();
-    Vector3::new(
-        thread_rng.gen_range(0.0..1.0),
-        thread_rng.gen_range(0.0..1.0),
-        thread_rng.gen_range(0.0..1.0),
-    )
-}
-
 pub fn random_vector_range(range: Range<f64>) -> Vector3<f64> {
     let mut thread_rng = rand::thread_rng();
     Vector3::new(
@@ -229,13 +197,4 @@ pub fn random_vector_in_unit_sphere() -> Vector3<f64> {
 
 pub fn random_unit_vector() -> Vector3<f64> {
     random_vector_in_unit_sphere().normalize()
-}
-
-pub fn random_unit_vector_on_hemisphere(normal: &Vector3<f64>) -> Vector3<f64> {
-    let vec = random_unit_vector();
-    if vec.dot(normal) > 0.0 {
-        vec
-    } else {
-        -vec
-    }
 }

@@ -1,5 +1,5 @@
 use nalgebra::Vector3;
-use rand::{random, Rng};
+use rand::Rng;
 
 use crate::{
     object::Hit,
@@ -46,7 +46,7 @@ impl Material {
     }
 }
 
-fn scatter_diffuse(ray: &Ray, hit: &Hit, albedo: &Color) -> Option<(Color, Ray)> {
+fn scatter_diffuse(_ray: &Ray, hit: &Hit, albedo: &Color) -> Option<(Color, Ray)> {
     let mut scatter_direction = hit.normal + random_unit_vector();
 
     // If the scatter direction is too small, it can cause floating point issues
