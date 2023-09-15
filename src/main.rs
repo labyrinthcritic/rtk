@@ -8,19 +8,29 @@ mod render;
 use std::{rc::Rc, thread};
 
 use image::{Color, Image};
-use nalgebra::Vector3;
+use nalgebra::{Unit, UnitQuaternion, Vector3};
 use render::Renderer;
 
 use crate::{
     material::Material,
     object::{Object, World},
+    render::Camera,
 };
 
 fn main() {
     let width = 640;
     let height = 480;
 
-    let (renderer, progress_receiver) = Renderer::new(width, height);
+    let camera = Camera {
+        position: Vector3::zeros(),
+        rotation: UnitQuaternion::from_axis_angle(
+            &Unit::new_normalize(Vector3::new(0.0, 1.0, 0.0)),
+            -45.0_f64.to_radians(),
+        ),
+        fov: 90.0,
+    };
+
+    let (renderer, progress_receiver) = Renderer::new(width, height, camera);
 
     let handle = thread::spawn(|| render(renderer));
 

@@ -1,6 +1,6 @@
 use std::{ops::Range, sync::mpsc};
 
-use nalgebra::{constraint::SameNumberOfColumns, Vector3};
+use nalgebra::{constraint::SameNumberOfColumns, UnitQuaternion, Vector3};
 use rand::Rng;
 
 use crate::object::World;
@@ -17,6 +17,13 @@ impl Ray {
 }
 
 pub type Color = Vector3<f64>;
+
+#[derive(Clone, Debug, Default)]
+pub struct Camera {
+    pub position: Vector3<f64>,
+    pub rotation: UnitQuaternion<f64>,
+    pub fov: f64,
+}
 
 pub struct Renderer {
     aspect_ratio: f64,
@@ -47,28 +54,29 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(image_width: u32, image_height: u32) -> (Self, mpsc::Receiver<u32>) {
-        const VIEWPORT_HEIGHT: f64 = 2.0;
-
+    pub fn new(image_width: u32, image_height: u32, camera: Camera) -> (Self, mpsc::Receiver<u32>) {
         let aspect_ratio = image_width as f64 / image_height as f64;
-
-        let viewport_width = VIEWPORT_HEIGHT * aspect_ratio;
-        let viewport_height = VIEWPORT_HEIGHT;
 
         let focal_length = 1.0;
 
-        let camera_center = Vector3::zeros();
+        let viewport_height = 2.0 * focal_length * (camera.fov.to_radians() / 2.0).tan();
+        let viewport_width = viewport_height * aspect_ratio;
 
-        let viewport_u = Vector3::new(viewport_width, 0.0, 0.0);
-        let viewport_v = Vector3::new(0.0, -viewport_height, 0.0);
+        let camera_center = camera.position;
+
+        // camera +x unit vector
+        let u = camera.rotation * Vector3::x();
+        let v = camera.rotation * Vector3::y();
+        let w = camera.rotation * Vector3::z();
+
+        let viewport_u = viewport_width * u;
+        let viewport_v = viewport_height * -v;
 
         let pixel_delta_u = viewport_u / image_width as f64;
         let pixel_delta_v = viewport_v / image_height as f64;
 
-        let viewport_upper_left = camera_center
-            - Vector3::new(0.0, 0.0, focal_length)
-            - viewport_u / 2.0
-            - viewport_v / 2.0;
+        let viewport_upper_left =
+            camera_center - (focal_length * w) - viewport_u / 2.0 - viewport_v / 2.0;
         let pixel_origin = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         let (sender, receiver) = mpsc::channel();
