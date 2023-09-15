@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use nalgebra::{constraint::SameNumberOfColumns, Vector3};
 use rand::Rng;
 
@@ -40,6 +42,7 @@ pub struct Renderer {
     // "pixel00_loc" in the tutorial
     pixel_origin: Vector3<f64>,
     samples_per_pixel: u32,
+    max_ray_bounces: u32,
 }
 
 impl Renderer {
@@ -82,12 +85,26 @@ impl Renderer {
             viewport_upper_left,
             pixel_origin,
             samples_per_pixel: 100,
+            max_ray_bounces: 50,
         }
     }
 
-    pub fn ray_color(&self, world: &World, ray: &Ray) -> Color {
-        if let Some(hit) = world.hit(ray, 0.0, f64::INFINITY) {
-            return 0.5 * (hit.normal + Color::new(1.0, 1.0, 1.0));
+    pub fn ray_color(&self, world: &World, ray: &Ray, depth: u32) -> Color {
+        if depth == 0 {
+            return Color::zeros();
+        }
+
+        if let Some(hit) = world.hit(ray, 0.001, f64::INFINITY) {
+            let new_direction = random_unit_vector_on_hemisphere(&hit.normal);
+            return 0.5
+                * self.ray_color(
+                    world,
+                    &Ray {
+                        origin: hit.p,
+                        direction: new_direction,
+                    },
+                    depth - 1,
+                );
         }
 
         let unit_direction = ray.direction.normalize();
@@ -109,7 +126,7 @@ impl Renderer {
 
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
-                    pixel_color += self.ray_color(world, &ray);
+                    pixel_color += self.ray_color(world, &ray, self.max_ray_bounces);
                 }
 
                 pixel_color /= self.samples_per_pixel as f64;
@@ -134,11 +151,52 @@ impl Renderer {
         }
     }
 
+    /// Get a random location within the size of a pixel on the viewport.
     fn pixel_sample_square(&self) -> Vector3<f64> {
         let mut thread_rng = rand::thread_rng();
         let px = -0.5 + thread_rng.gen_range(0.0..1.0);
         let py = -0.5 + thread_rng.gen_range(0.0..1.0);
 
         (px * self.pixel_delta_u) + (py * self.pixel_delta_v)
+    }
+}
+
+fn random_vector() -> Vector3<f64> {
+    let mut thread_rng = rand::thread_rng();
+    Vector3::new(
+        thread_rng.gen_range(0.0..1.0),
+        thread_rng.gen_range(0.0..1.0),
+        thread_rng.gen_range(0.0..1.0),
+    )
+}
+
+fn random_vector_range(range: Range<f64>) -> Vector3<f64> {
+    let mut thread_rng = rand::thread_rng();
+    Vector3::new(
+        thread_rng.gen_range(range.clone()),
+        thread_rng.gen_range(range.clone()),
+        thread_rng.gen_range(range),
+    )
+}
+
+fn random_vector_in_unit_sphere() -> Vector3<f64> {
+    loop {
+        let vec = random_vector_range(-1.0..1.0);
+        if vec.magnitude_squared() <= 1.0 {
+            return vec;
+        }
+    }
+}
+
+fn random_unit_vector() -> Vector3<f64> {
+    random_vector_in_unit_sphere().normalize()
+}
+
+fn random_unit_vector_on_hemisphere(normal: &Vector3<f64>) -> Vector3<f64> {
+    let vec = random_unit_vector();
+    if vec.dot(normal) > 0.0 {
+        vec
+    } else {
+        -vec
     }
 }
