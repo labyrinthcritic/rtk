@@ -1,3 +1,4 @@
+mod cli;
 mod image;
 mod material;
 mod object;
@@ -17,7 +18,9 @@ use crate::{
 };
 
 fn main() {
-    let scene_path = std::env::args().nth(1).unwrap();
+    let cli = <cli::Cli as clap::Parser>::parse();
+
+    let scene_path = cli.scene;
     let scene_source = std::fs::read_to_string(scene_path).unwrap();
     let scene: Scene = toml::from_str(&scene_source).unwrap();
 
