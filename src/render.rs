@@ -117,8 +117,8 @@ impl Renderer {
     }
 
     /// Render a complete world, casting several rays for each pixel and collecting them into a complete image.
-    pub fn render(&self, world: &World) -> crate::image::Image {
-        let mut image = crate::image::Image::new(self.image_width, self.image_height);
+    pub fn render(&self, world: &World) -> image::RgbImage {
+        let mut image = image::RgbImage::new(self.image_width, self.image_height);
 
         let total_pixels = self.image_width * self.image_height;
         let mut pixels_completed = 0;
@@ -137,8 +137,9 @@ impl Renderer {
                 pixel_color /= self.samples_per_pixel as f64;
                 // Gamma correct
                 pixel_color = linear_to_gamma(&pixel_color);
+                let rgb = color_to_rgb(&pixel_color);
 
-                *image.pixel(i, j) = crate::image::Color::from_float_vector(&pixel_color);
+                image.put_pixel(i, j, image::Rgb(rgb));
 
                 pixels_completed += 1;
 
@@ -233,4 +234,12 @@ pub fn random_vector_in_unit_disk() -> Vector3<f64> {
             return vec;
         }
     }
+}
+
+fn color_to_rgb(c: &Vector3<f64>) -> [u8; 3] {
+    [
+        (c.x * 255.999) as u8,
+        (c.y * 255.999) as u8,
+        (c.z * 255.999) as u8,
+    ]
 }

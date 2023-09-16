@@ -1,5 +1,4 @@
 mod cli;
-mod image;
 mod material;
 mod object;
 mod render;
@@ -44,8 +43,8 @@ fn main() {
 
     let image = handle.join().unwrap();
 
-    eprintln!("\nWriting to image.ppm...");
-    std::fs::write("image.ppm", image.ppm().as_bytes()).unwrap();
+    eprintln!("\nWriting to {}...", cli.output.to_string_lossy());
+    image.save(cli.output).unwrap();
 }
 
 fn collect_materials(scene: &Scene) -> Vec<Rc<Material>> {
