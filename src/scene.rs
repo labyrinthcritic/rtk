@@ -16,8 +16,8 @@ pub struct Scene {
 #[serde(rename_all = "kebab-case")]
 pub struct Camera {
     pub image_dimensions: (u32, u32),
-    pub position: (f64, f64, f64),
-    pub rotation: Rotation,
+    pub position: Option<(f64, f64, f64)>,
+    pub rotation: Option<Rotation>,
     pub fov: f64,
     pub defocus: Option<Defocus>,
 }

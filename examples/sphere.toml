@@ -1,7 +1,7 @@
 [camera]
 image-dimensions = [640, 480]
-position = [0.0, 0.0, 0.0]
-rotation = { type = "euler", roll = 0, pitch = 0, yaw = 0 }
+# position = [0.0, 0.0, 0.0]
+# rotation = { type = "euler", roll = 0, pitch = 0, yaw = 0 }
 fov = 90.0
 
 # Red
@@ -13,6 +13,7 @@ albedo = [1.0, 0.0, 0.0]
 [[materials]]
 type = "diffuse"
 albedo = [0.0, 0.0, 1.0]
+
 # Ground
 [[objects]]
 material = 0

@@ -73,15 +73,19 @@ fn create_objects(scene: &Scene, materials: &[Rc<Material>]) -> Vec<Object> {
 }
 
 fn create_camera(scene: &Scene) -> Camera {
-    let p = scene.camera.position;
+    let p = scene.camera.position.unwrap_or_default();
 
-    let rotation = match scene.camera.rotation {
-        scene::Rotation::Euler { roll, pitch, yaw } => {
-            UnitQuaternion::from_euler_angles(roll, pitch, yaw)
+    let rotation = if let Some(rotation) = &scene.camera.rotation {
+        match rotation {
+            scene::Rotation::Euler { roll, pitch, yaw } => {
+                UnitQuaternion::from_euler_angles(*roll, *pitch, *yaw)
+            }
+            scene::Rotation::Direction { x, y, z } => {
+                UnitQuaternion::rotation_between(&-Vector3::z(), &Vector3::new(*x, *y, *z)).unwrap()
+            }
         }
-        scene::Rotation::Direction { x, y, z } => {
-            UnitQuaternion::rotation_between(&-Vector3::z(), &Vector3::new(x, y, z)).unwrap()
-        }
+    } else {
+        UnitQuaternion::from_euler_angles(0.0, 0.0, 0.0)
     };
 
     let (focus_distance, defocus_angle) = if let Some(defocus) = &scene.camera.defocus {
