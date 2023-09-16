@@ -1,0 +1,24 @@
+[camera]
+image-dimensions = [640, 480]
+position = [0.0, 0.0, 0.0]
+rotation = { type = "euler", roll = 0, pitch = 0, yaw = 0 }
+fov = 90.0
+
+# Red
+[[materials]]
+type = "diffuse"
+albedo = [1.0, 0.0, 0.0]
+
+# Blue
+[[materials]]
+type = "diffuse"
+albedo = [0.0, 0.0, 1.0]
+# Ground
+[[objects]]
+material = 0
+shape = { type = "sphere", center = [0.0, -100.5, -1.0], radius = 100.0 }
+
+# Ball
+[[objects]]
+material = 1
+shape = { type = "sphere", center = [0.0, 0.0, -1.0], radius = 0.5 }

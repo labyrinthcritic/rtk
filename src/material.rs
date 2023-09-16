@@ -19,6 +19,7 @@ pub enum Material {
     },
 }
 
+#[allow(unused)]
 impl Material {
     pub fn diffuse(r: f64, g: f64, b: f64) -> Self {
         Self::Diffuse {

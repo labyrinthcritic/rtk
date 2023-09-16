@@ -26,7 +26,7 @@ impl World {
 
 pub enum Object {
     Sphere {
-        origin: Vector3<f64>,
+        center: Vector3<f64>,
         radius: f64,
         material: Rc<Material>,
     },
@@ -36,7 +36,7 @@ impl Object {
     pub fn hit(&self, ray: &Ray, ray_t: Range<f64>) -> Option<Hit> {
         match self {
             Object::Sphere {
-                origin,
+                center: origin,
                 radius,
                 material,
             } => hit_sphere(origin, *radius, ray, ray_t, Rc::clone(material)),

@@ -20,6 +20,8 @@ pub type Color = Vector3<f64>;
 
 #[derive(Clone, Debug, Default)]
 pub struct Camera {
+    pub image_width: u32,
+    pub image_height: u32,
     pub position: Vector3<f64>,
     pub rotation: UnitQuaternion<f64>,
     pub fov: f64,
@@ -28,16 +30,15 @@ pub struct Camera {
 }
 
 pub struct Renderer {
-    /// In pixels.
-    image_width: u32,
-    /// In pixels.
-    image_height: u32,
-
     samples_per_pixel: u32,
     max_ray_bounces: u32,
     progress_sender: mpsc::Sender<u32>,
 
     // values computed from camera and viewport
+    /// In pixels.
+    image_width: u32,
+    /// In pixels.
+    image_height: u32,
     camera_center: Vector3<f64>,
     pixel_delta_u: Vector3<f64>,
     pixel_delta_v: Vector3<f64>,
@@ -48,8 +49,8 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(image_width: u32, image_height: u32, camera: Camera) -> (Self, mpsc::Receiver<u32>) {
-        let aspect_ratio = image_width as f64 / image_height as f64;
+    pub fn new(camera: Camera) -> (Self, mpsc::Receiver<u32>) {
+        let aspect_ratio = camera.image_width as f64 / camera.image_height as f64;
 
         let viewport_height = 2.0 * camera.focus_distance * (camera.fov.to_radians() / 2.0).tan();
         let viewport_width = viewport_height * aspect_ratio;
@@ -64,8 +65,8 @@ impl Renderer {
         let viewport_u = viewport_width * u;
         let viewport_v = viewport_height * -v;
 
-        let pixel_delta_u = viewport_u / image_width as f64;
-        let pixel_delta_v = viewport_v / image_height as f64;
+        let pixel_delta_u = viewport_u / camera.image_width as f64;
+        let pixel_delta_v = viewport_v / camera.image_height as f64;
 
         let viewport_upper_left =
             camera_center - (camera.focus_distance * w) - viewport_u / 2.0 - viewport_v / 2.0;
@@ -80,8 +81,8 @@ impl Renderer {
 
         (
             Self {
-                image_width,
-                image_height,
+                image_width: camera.image_width,
+                image_height: camera.image_height,
                 camera_center,
                 pixel_delta_u,
                 pixel_delta_v,

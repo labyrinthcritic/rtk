@@ -13,3 +13,5 @@ opt-level = 3
 [dependencies]
 nalgebra = "0.32.3"
 rand = "0.8.5"
+serde = { version = "1.0.188", features = ["derive"] }
+toml = "0.8.0"
