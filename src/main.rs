@@ -17,15 +17,19 @@ use crate::{
 
 fn main() {
     let width = 640;
-    let height = 480;
+    let height = 360;
+
+    let from = Vector3::new(-2.0, 2.0, 1.0);
+    let to = Vector3::new(0.0, 0.0, -1.0);
+
+    let rotation = UnitQuaternion::rotation_between(&-Vector3::z(), &(to - from)).unwrap();
 
     let camera = Camera {
-        position: Vector3::zeros(),
-        rotation: UnitQuaternion::from_axis_angle(
-            &Unit::new_normalize(Vector3::new(0.0, 1.0, 0.0)),
-            -45.0_f64.to_radians(),
-        ),
-        fov: 90.0,
+        position: Vector3::new(-2.0, 2.0, 1.0),
+        rotation,
+        fov: 20.0,
+        focus_distance: 3.4,
+        defocus_angle: 10.0,
     };
 
     let (renderer, progress_receiver) = Renderer::new(width, height, camera);
@@ -48,7 +52,7 @@ fn main() {
 
 fn render(renderer: Renderer) -> Image {
     let material_ground = Material::diffuse(0.8, 0.8, 0.0);
-    let material_center = Material::dielectric(1.5);
+    let material_center = Material::diffuse(0.1, 0.2, 0.5);
     let material_left = Material::dielectric(1.5);
     let material_right = Material::metal(0.8, 0.6, 0.2);
 

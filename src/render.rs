@@ -23,6 +23,8 @@ pub struct Camera {
     pub position: Vector3<f64>,
     pub rotation: UnitQuaternion<f64>,
     pub fov: f64,
+    pub focus_distance: f64,
+    pub defocus_angle: f64,
 }
 
 pub struct Renderer {
@@ -40,15 +42,16 @@ pub struct Renderer {
     pixel_delta_u: Vector3<f64>,
     pixel_delta_v: Vector3<f64>,
     pixel_origin: Vector3<f64>,
+    defocus_angle: f64,
+    defocus_disk_u: Vector3<f64>,
+    defocus_disk_v: Vector3<f64>,
 }
 
 impl Renderer {
     pub fn new(image_width: u32, image_height: u32, camera: Camera) -> (Self, mpsc::Receiver<u32>) {
         let aspect_ratio = image_width as f64 / image_height as f64;
 
-        let focal_length = 1.0;
-
-        let viewport_height = 2.0 * focal_length * (camera.fov.to_radians() / 2.0).tan();
+        let viewport_height = 2.0 * camera.focus_distance * (camera.fov.to_radians() / 2.0).tan();
         let viewport_width = viewport_height * aspect_ratio;
 
         let camera_center = camera.position;
@@ -65,8 +68,13 @@ impl Renderer {
         let pixel_delta_v = viewport_v / image_height as f64;
 
         let viewport_upper_left =
-            camera_center - (focal_length * w) - viewport_u / 2.0 - viewport_v / 2.0;
+            camera_center - (camera.focus_distance * w) - viewport_u / 2.0 - viewport_v / 2.0;
         let pixel_origin = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+        let defocus_radius =
+            camera.focus_distance * (camera.defocus_angle / 2.0).to_radians().tan();
+        let defocus_disk_u = u * defocus_radius;
+        let defocus_disk_v = v * defocus_radius;
 
         let (sender, receiver) = mpsc::channel();
 
@@ -81,6 +89,9 @@ impl Renderer {
                 samples_per_pixel: 100,
                 max_ray_bounces: 50,
                 progress_sender: sender,
+                defocus_angle: camera.defocus_angle,
+                defocus_disk_u,
+                defocus_disk_v,
             },
             receiver,
         )
@@ -146,10 +157,15 @@ impl Renderer {
             self.pixel_origin + (i as f64 * self.pixel_delta_u) + (j as f64 * self.pixel_delta_v);
         let pixel_sample = pixel_center + self.pixel_sample_square();
 
-        let ray_direction = pixel_sample - self.camera_center;
+        let origin = if self.defocus_angle <= 0.0 {
+            self.camera_center
+        } else {
+            self.defocus_disk_sample()
+        };
+        let ray_direction = pixel_sample - origin;
 
         Ray {
-            origin: self.camera_center,
+            origin,
             direction: ray_direction,
         }
     }
@@ -161,6 +177,11 @@ impl Renderer {
         let py = -0.5 + thread_rng.gen_range(0.0..1.0);
 
         (px * self.pixel_delta_u) + (py * self.pixel_delta_v)
+    }
+
+    fn defocus_disk_sample(&self) -> Vector3<f64> {
+        let p = random_vector_in_unit_disk();
+        self.camera_center + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
     }
 }
 
@@ -197,4 +218,18 @@ pub fn random_vector_in_unit_sphere() -> Vector3<f64> {
 
 pub fn random_unit_vector() -> Vector3<f64> {
     random_vector_in_unit_sphere().normalize()
+}
+
+pub fn random_vector_in_unit_disk() -> Vector3<f64> {
+    let mut thread_rng = rand::thread_rng();
+    loop {
+        let vec = Vector3::new(
+            thread_rng.gen_range(-1.0..1.0),
+            thread_rng.gen_range(-1.0..1.0),
+            0.0,
+        );
+        if vec.magnitude_squared() <= 1.0 {
+            return vec;
+        }
+    }
 }
