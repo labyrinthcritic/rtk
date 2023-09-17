@@ -1,0 +1,70 @@
+[camera]
+image-dimensions = [1920, 1080]
+position = [0.0, 0.75, 6.0]
+rotation = { type = "euler", roll = -0.1, pitch = 0.0, yaw = 0.0 }
+fov = 40.0
+
+# gray
+[[materials]]
+type = "diffuse"
+albedo = [0.75, 0.75, 0.75]
+
+# green
+[[materials]]
+type = "diffuse"
+albedo = [0.2, 0.7, 0.2]
+
+# red
+[[materials]]
+type = "diffuse"
+albedo = [0.7, 0.2, 0.2]
+
+# glass
+[[materials]]
+type = "dielectric"
+ir = 1.5
+
+# metal
+[[materials]]
+type = "metal"
+albedo = [0.5, 0.5, 0.5]
+
+# light
+[[materials]]
+type = "light"
+color = [1.0, 1.0, 1.0]
+
+# floor
+[[objects]]
+material = 0
+shape = { type = "quad", q = [-200.0, 0.0, -5.0], u = [400.0, 0.0, 0.0], v = [0.0, 0.0, 100.0] }
+
+# ceiling
+[[objects]]
+material = 5
+shape = { type = "quad", q = [-10.0, 0.0, -5.0], u = [20.0, 0.0, 0.0], v = [0.0, 20.0, 0.0] }
+
+# left diffuse ball
+[[objects]]
+material = 1
+shape = { type = "sphere", center = [-1.0, 0.25, 3.75], radius = 0.25 }
+
+# large metal ball
+[[objects]]
+material = 4
+shape = { type = "sphere", center = [-0.75, 0.75, 2.5], radius = 0.75 }
+
+# center glass ball
+[[objects]]
+material = 3
+shape = { type = "sphere", center = [0.0, 0.3, 3.75], radius = 0.4 }
+
+# right diffuse ball
+[[objects]]
+material = 2
+shape = { type = "sphere", center = [0.75, 0.5, 2.5], radius = 0.5 }
+
+# right light ball
+[[objects]]
+material = 5
+shape = { type = "sphere", center = [1.0, 0.25, 3.75], radius = 0.25 }
