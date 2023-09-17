@@ -6,7 +6,7 @@ mod scene;
 
 use std::{rc::Rc, thread};
 
-use nalgebra::{UnitQuaternion, Vector3};
+use nalgebra::{Unit, UnitQuaternion, Vector3};
 use render::Renderer;
 
 use crate::{
@@ -103,7 +103,13 @@ fn create_camera(scene: &Scene) -> Camera {
                 UnitQuaternion::from_euler_angles(*roll, *pitch, *yaw)
             }
             scene::Rotation::Direction { x, y, z } => {
-                UnitQuaternion::rotation_between(&-Vector3::z(), &Vector3::new(*x, *y, *z)).unwrap()
+                UnitQuaternion::rotation_between(&-Vector3::z(), &Vector3::new(*x, *y, *z))
+                    .unwrap_or_else(|| {
+                        UnitQuaternion::from_axis_angle(
+                            &Unit::new_normalize(Vector3::y()),
+                            std::f64::consts::PI,
+                        )
+                    })
             }
         }
     } else {

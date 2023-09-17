@@ -1,0 +1,53 @@
+# Ray Tracing: The Next Week, Listing 61
+
+[camera]
+image-dimensions = [400, 400]
+position = [278.0, 278.0, -800.0]
+rotation = { type = "direction", x = 0.0, y = 0.0, z = 1.0 }
+fov = 40.0
+
+# red
+[[materials]]
+type = "diffuse"
+albedo = [0.65, 0.05, 0.05]
+
+# white
+[[materials]]
+type = "diffuse"
+albedo = [0.73, 0.73, 0.73]
+
+# green
+[[materials]]
+type = "diffuse"
+albedo = [0.12, 0.45, 0.15]
+
+# light
+[[materials]]
+type = "light"
+color = [15.0, 15.0, 15.0]
+
+
+
+[[objects]]
+material = 2
+shape = { type = "quad", q = [555.0, 0.0, 0.0], u = [0.0, 555.0, 0.0], v = [0.0, 0.0, 555.0] }
+
+[[objects]]
+material = 0
+shape = { type = "quad", q = [0.0, 0.0, 0.0], u = [0.0, 555.0, 0.0], v = [0.0, 0.0, 555.0] }
+
+[[objects]]
+material = 3
+shape = { type = "quad", q = [343.0, 554.0, 332.0], u = [-130.0, 0.0, 0.0], v = [0.0, 0.0, -105.0] }
+
+[[objects]]
+material = 1
+shape = { type = "quad", q = [0.0, 0.0, 0.0], u = [555.0, 0.0, 0.0], v = [0.0, 0.0, 555.0] }
+
+[[objects]]
+material = 1
+shape = { type = "quad", q = [555.0, 555.0, 555.0], u = [-555.0, 0.0, 0.0], v = [0.0, 0.0, -555.0] }
+
+[[objects]]
+material = 1
+shape = { type = "quad", q = [0.0, 0.0, 555.0], u = [555.0, 0.0, 0.0], v = [0.0, 555.0, 0.0] }
