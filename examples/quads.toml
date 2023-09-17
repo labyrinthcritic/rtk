@@ -1,0 +1,51 @@
+# Ray Tracing: The Next Week, Listing 54
+
+[camera]
+image-dimensions = [400, 400]
+position = [0.0, 0.0, 9.0]
+fov = 80.0
+
+# left red
+[[materials]]
+type = "diffuse"
+albedo = [1.0, 0.2, 0.2]
+
+# back green
+[[materials]]
+type = "diffuse"
+albedo = [0.2, 1.0, 0.2]
+
+# right blue
+[[materials]]
+type = "diffuse"
+albedo = [0.2, 0.2, 1.0]
+
+# upper orange
+[[materials]]
+type = "diffuse"
+albedo = [1.0, 0.5, 0.0]
+
+# lower teal
+[[materials]]
+type = "diffuse"
+albedo = [0.2, 0.8, 0.8]
+
+[[objects]]
+material = 0
+shape = { type = "quad", q = [-3.0, -2.0, 5.0], u = [0.0, 0.0, -4.0], v = [0.0, 4.0, 0.0] }
+
+[[objects]]
+material = 1
+shape = { type = "quad", q = [-2.0, -2.0, 0.0], u = [4.0, 0.0, 0.0], v = [0.0, 4.0, 0.0] }
+
+[[objects]]
+material = 2
+shape = { type = "quad", q = [3.0, -2.0, 1.0], u = [0.0, 0.0, 4.0], v = [0.0, 4.0, 0.0] }
+
+[[objects]]
+material = 3
+shape = { type = "quad", q = [-2.0, 3.0, 1.0], u = [4.0, 0.0, 0.0], v = [0.0, 0.0, 4.0] }
+
+[[objects]]
+material = 4
+shape = { type = "quad", q = [-2.0, -3.0, 5.0], u = [4.0, 0.0, 0.0], v = [0.0, 0.0, -4.0] }

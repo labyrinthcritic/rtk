@@ -30,6 +30,48 @@ pub enum Object {
         radius: f64,
         material: Rc<Material>,
     },
+    Quad {
+        /// The point from which the basis vectors extend.
+        q: Vector3<f64>,
+        /// First basis vector.
+        u: Vector3<f64>,
+        /// Second basis vector.
+        v: Vector3<f64>,
+        material: Rc<Material>,
+        /// Data calculated from the other parameters.
+        cached: QuadCached,
+    },
+}
+
+impl Object {
+    pub fn sphere(center: Vector3<f64>, radius: f64, material: Rc<Material>) -> Self {
+        Self::Sphere {
+            center,
+            radius,
+            material,
+        }
+    }
+
+    pub fn quad(q: Vector3<f64>, u: Vector3<f64>, v: Vector3<f64>, material: Rc<Material>) -> Self {
+        let n = u.cross(&v);
+        let normal = n.normalize();
+        let d = normal.dot(&q);
+        // TODO: possibly useless? normal vector is already normalized; normal == w
+        let w = n / n.dot(&n);
+        Self::Quad {
+            q,
+            u,
+            v,
+            material,
+            cached: QuadCached { normal, d, w },
+        }
+    }
+}
+
+pub struct QuadCached {
+    normal: Vector3<f64>,
+    d: f64,
+    w: Vector3<f64>,
 }
 
 impl Object {
@@ -39,7 +81,14 @@ impl Object {
                 center: origin,
                 radius,
                 material,
-            } => hit_sphere(origin, *radius, ray, ray_t, Rc::clone(material)),
+            } => hit_sphere(ray, ray_t, origin, *radius, Rc::clone(material)),
+            Object::Quad {
+                q,
+                u,
+                v,
+                material,
+                cached,
+            } => hit_quad(ray, ray_t, q, u, v, Rc::clone(material), cached),
         }
     }
 }
@@ -59,10 +108,10 @@ pub struct Hit {
 
 /// Finds the time at which a ray will hit a sphere, or returns `None` if it will not.
 fn hit_sphere(
-    center: &Vector3<f64>,
-    radius: f64,
     ray: &Ray,
     ray_t: Range<f64>,
+    center: &Vector3<f64>,
+    radius: f64,
     material: Rc<Material>,
 ) -> Option<Hit> {
     // Quadratic formula
@@ -92,6 +141,46 @@ fn hit_sphere(
     let p = ray.at(t);
     let outward_normal = (p - center) / radius;
     let (normal, front_face) = face_normal(ray, &outward_normal);
+
+    Some(Hit {
+        p,
+        normal,
+        t,
+        front_face,
+        material,
+    })
+}
+
+fn hit_quad(
+    ray: &Ray,
+    ray_t: Range<f64>,
+    q: &Vector3<f64>,
+    u: &Vector3<f64>,
+    v: &Vector3<f64>,
+    material: Rc<Material>,
+    cache: &QuadCached,
+) -> Option<Hit> {
+    let denom = cache.normal.dot(&ray.direction);
+    // if the ray is parallel to the plane, do not hit
+    if denom.abs() < 1e-8 {
+        return None;
+    }
+
+    let t = (cache.d - cache.normal.dot(&ray.origin)) / denom;
+    if !ray_t.contains(&t) {
+        return None;
+    }
+
+    let p = ray.at(t);
+    let planar_hit = p - q;
+    let alpha = cache.w.dot(&planar_hit.cross(&v));
+    let beta = cache.w.dot(&u.cross(&planar_hit));
+
+    if !((0.0..1.0).contains(&alpha)) || !((0.0..1.0).contains(&beta)) {
+        return None;
+    }
+
+    let (normal, front_face) = face_normal(ray, &cache.normal);
 
     Some(Hit {
         p,

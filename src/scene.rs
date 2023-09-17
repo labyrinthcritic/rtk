@@ -56,6 +56,11 @@ pub enum Shape {
         center: (f64, f64, f64),
         radius: f64,
     },
+    Quad {
+        q: (f64, f64, f64),
+        u: (f64, f64, f64),
+        v: (f64, f64, f64),
+    },
 }
 
 impl From<Material> for crate::material::Material {

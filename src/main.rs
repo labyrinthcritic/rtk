@@ -62,12 +62,21 @@ fn create_objects(scene: &Scene, materials: &[Rc<Material>]) -> Vec<Object> {
     scene
         .objects
         .iter()
-        .map(|obj| match obj.shape {
-            scene::Shape::Sphere { center, radius } => Object::Sphere {
-                center: Vector3::new(center.0, center.1, center.2),
-                radius,
-                material: Rc::clone(&materials[obj.material]),
-            },
+        .map(|obj| {
+            let obj = obj.clone();
+            match obj.shape {
+                scene::Shape::Sphere { center, radius } => Object::sphere(
+                    tuple_to_vector(center),
+                    radius,
+                    Rc::clone(&materials[obj.material]),
+                ),
+                scene::Shape::Quad { q, u, v } => Object::quad(
+                    tuple_to_vector(q),
+                    tuple_to_vector(u),
+                    tuple_to_vector(v),
+                    Rc::clone(&materials[obj.material]),
+                ),
+            }
         })
         .collect()
 }
@@ -103,6 +112,10 @@ fn create_camera(scene: &Scene) -> Camera {
         focus_distance,
         defocus_angle,
     }
+}
+
+fn tuple_to_vector((x, y, z): (f64, f64, f64)) -> Vector3<f64> {
+    Vector3::new(x, y, z)
 }
 
 fn print_progress_bar(progress: u32) {
