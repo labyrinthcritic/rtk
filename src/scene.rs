@@ -1,6 +1,6 @@
 //! This module describes the model of a scene file.
 
-use nalgebra::Vector3;
+use nalgebra::{UnitQuaternion, Vector3};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -39,10 +39,19 @@ pub struct Defocus {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum Material {
-    Diffuse { albedo: (f64, f64, f64) },
-    Metal { albedo: (f64, f64, f64) },
-    Dielectric { ir: f64 },
-    Light { color: (f64, f64, f64) },
+    Diffuse {
+        albedo: (f64, f64, f64),
+    },
+    Metal {
+        albedo: (f64, f64, f64),
+    },
+    Dielectric {
+        /// Index of refraction.
+        ir: f64,
+    },
+    Light {
+        color: (f64, f64, f64),
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -63,6 +72,37 @@ pub enum Shape {
         u: (f64, f64, f64),
         v: (f64, f64, f64),
     },
+    Prism {
+        /// The center of the bottom face.
+        origin: (f64, f64, f64),
+        width: f64,
+        height: f64,
+        depth: f64,
+        rotation: Option<Rotation>,
+    },
+}
+
+impl Default for Rotation {
+    fn default() -> Self {
+        Self::Euler {
+            roll: 0.0,
+            pitch: 0.0,
+            yaw: 0.0,
+        }
+    }
+}
+
+impl From<Rotation> for UnitQuaternion<f64> {
+    fn from(rotation: Rotation) -> Self {
+        match rotation {
+            Rotation::Euler { roll, pitch, yaw } => {
+                UnitQuaternion::from_euler_angles(roll, pitch, yaw)
+            }
+            Rotation::Direction { x, y, z } => {
+                UnitQuaternion::rotation_between(&-Vector3::z(), &Vector3::new(x, y, z)).unwrap()
+            }
+        }
+    }
 }
 
 impl From<Material> for crate::material::Material {

@@ -1,6 +1,6 @@
 use std::{ops::Range, rc::Rc};
 
-use nalgebra::Vector3;
+use nalgebra::{UnitQuaternion, Vector3};
 
 use crate::{material::Material, render::Ray};
 
@@ -65,6 +65,36 @@ impl Object {
             material,
             cached: QuadCached { normal, d, w },
         }
+    }
+
+    /// Construct a prism.
+    /// A prism is not a primitive object shape; it is 6 `Quad`s.
+    pub fn prism(
+        // The center of the bottom face.
+        origin: &Vector3<f64>,
+        width: f64,
+        height: f64,
+        depth: f64,
+        rotation: &UnitQuaternion<f64>,
+        material: Rc<Material>,
+    ) -> Vec<Self> {
+        let u = rotation * (Vector3::new(1.0, 0.0, 0.0) * width);
+        let v = rotation * (Vector3::new(0.0, 1.0, 0.0) * height);
+        let w = rotation * (Vector3::new(0.0, 0.0, 1.0) * depth);
+
+        let true_origin = origin - (u / 2.0) - (w / 2.0);
+        let opposite_true_origin = origin + (u / 2.0) + (w / 2.0) + v;
+
+        let quads = vec![
+            Object::quad(true_origin, u, v, Rc::clone(&material)),
+            Object::quad(true_origin, v, w, Rc::clone(&material)),
+            Object::quad(true_origin, w, u, Rc::clone(&material)),
+            Object::quad(opposite_true_origin, -u, -v, Rc::clone(&material)),
+            Object::quad(opposite_true_origin, -v, -w, Rc::clone(&material)),
+            Object::quad(opposite_true_origin, -w, -u, Rc::clone(&material)),
+        ];
+
+        quads
     }
 }
 

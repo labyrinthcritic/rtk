@@ -59,26 +59,39 @@ fn collect_materials(scene: &Scene) -> Vec<Rc<Material>> {
 }
 
 fn create_objects(scene: &Scene, materials: &[Rc<Material>]) -> Vec<Object> {
-    scene
-        .objects
-        .iter()
-        .map(|obj| {
-            let obj = obj.clone();
-            match obj.shape {
-                scene::Shape::Sphere { center, radius } => Object::sphere(
-                    tuple_to_vector(center),
-                    radius,
-                    Rc::clone(&materials[obj.material]),
-                ),
-                scene::Shape::Quad { q, u, v } => Object::quad(
-                    tuple_to_vector(q),
-                    tuple_to_vector(u),
-                    tuple_to_vector(v),
-                    Rc::clone(&materials[obj.material]),
-                ),
-            }
-        })
-        .collect()
+    let mut result = vec![];
+
+    for obj in scene.objects.iter() {
+        match obj.shape {
+            scene::Shape::Sphere { center, radius } => result.push(Object::sphere(
+                tuple_to_vector(center),
+                radius,
+                Rc::clone(&materials[obj.material]),
+            )),
+            scene::Shape::Quad { q, u, v } => result.push(Object::quad(
+                tuple_to_vector(q),
+                tuple_to_vector(u),
+                tuple_to_vector(v),
+                Rc::clone(&materials[obj.material]),
+            )),
+            scene::Shape::Prism {
+                origin,
+                width,
+                height,
+                depth,
+                ref rotation,
+            } => result.extend(Object::prism(
+                &tuple_to_vector(origin),
+                width,
+                height,
+                depth,
+                &rotation.clone().unwrap_or_default().into(),
+                Rc::clone(&materials[obj.material]),
+            )),
+        }
+    }
+
+    result
 }
 
 fn create_camera(scene: &Scene) -> Camera {
