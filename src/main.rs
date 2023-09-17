@@ -103,10 +103,13 @@ fn create_camera(scene: &Scene) -> Camera {
         (1.0, 0.0)
     };
 
+    let background_color = scene.camera.background_color.unwrap_or_default();
+
     Camera {
         image_width: scene.camera.image_dimensions.0,
+        background_color: tuple_to_vector(background_color),
         image_height: scene.camera.image_dimensions.1,
-        position: Vector3::new(p.0, p.1, p.2),
+        position: tuple_to_vector(p),
         rotation,
         fov: scene.camera.fov,
         focus_distance,

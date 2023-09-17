@@ -16,6 +16,7 @@ pub struct Scene {
 #[serde(rename_all = "kebab-case")]
 pub struct Camera {
     pub image_dimensions: (u32, u32),
+    pub background_color: Option<(f64, f64, f64)>,
     pub position: Option<(f64, f64, f64)>,
     pub rotation: Option<Rotation>,
     pub fov: f64,
@@ -41,6 +42,7 @@ pub enum Material {
     Diffuse { albedo: (f64, f64, f64) },
     Metal { albedo: (f64, f64, f64) },
     Dielectric { ir: f64 },
+    Light { color: (f64, f64, f64) },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -73,6 +75,9 @@ impl From<Material> for crate::material::Material {
                 albedo: Vector3::new(albedo.0, albedo.1, albedo.2),
             },
             Material::Dielectric { ir } => crate::material::Material::Dielectric { ir },
+            Material::Light { color } => crate::material::Material::Light {
+                color: Vector3::new(color.0, color.1, color.2),
+            },
         }
     }
 }

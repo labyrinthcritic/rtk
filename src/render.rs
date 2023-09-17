@@ -22,6 +22,7 @@ pub type Color = Vector3<f64>;
 pub struct Camera {
     pub image_width: u32,
     pub image_height: u32,
+    pub background_color: Vector3<f64>,
     pub position: Vector3<f64>,
     pub rotation: UnitQuaternion<f64>,
     pub fov: f64,
@@ -31,6 +32,7 @@ pub struct Camera {
 
 pub struct Renderer {
     samples_per_pixel: u32,
+    background_color: Color,
     max_ray_bounces: u32,
     progress_sender: mpsc::Sender<u32>,
 
@@ -81,13 +83,14 @@ impl Renderer {
 
         (
             Self {
+                samples_per_pixel: 100,
+                background_color: camera.background_color,
                 image_width: camera.image_width,
                 image_height: camera.image_height,
                 camera_center,
                 pixel_delta_u,
                 pixel_delta_v,
                 pixel_origin,
-                samples_per_pixel: 100,
                 max_ray_bounces: 50,
                 progress_sender: sender,
                 defocus_angle: camera.defocus_angle,
@@ -106,14 +109,16 @@ impl Renderer {
 
         if let Some(hit) = world.hit(ray, 0.001, f64::INFINITY) {
             if let Some((attenuation, scattered)) = hit.material.scatter(ray, &hit) {
-                return attenuation.component_mul(&self.ray_color(world, &scattered, depth - 1));
+                let emission = hit.material.emit();
+                let scatter =
+                    attenuation.component_mul(&self.ray_color(world, &scattered, depth - 1));
+                return emission + scatter;
+            } else {
+                return hit.material.emit();
             }
-            return Color::zeros();
         }
 
-        let unit_direction = ray.direction.normalize();
-        let a = 0.5 * (unit_direction.y + 1.0);
-        (1.0 - a) * Color::new(1.0, 1.0, 1.0) + a * Color::new(0.5, 0.7, 1.0)
+        self.background_color
     }
 
     /// Render a complete world, casting several rays for each pixel and collecting them into a complete image.

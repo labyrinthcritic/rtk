@@ -17,6 +17,9 @@ pub enum Material {
         /// Index of refraction.
         ir: f64,
     },
+    Light {
+        color: Color,
+    },
 }
 
 #[allow(unused)]
@@ -43,6 +46,16 @@ impl Material {
             Material::Diffuse { albedo } => scatter_diffuse(ray, hit, albedo),
             Material::Metal { albedo } => scatter_metal(ray, hit, albedo),
             Material::Dielectric { ir } => scatter_dielectric(ray, hit, *ir),
+            Material::Light { color } => None,
+        }
+    }
+
+    pub fn emit(&self) -> Color {
+        match self {
+            Material::Diffuse { albedo } => Color::zeros(),
+            Material::Metal { albedo } => Color::zeros(),
+            Material::Dielectric { ir } => Color::zeros(),
+            Material::Light { color } => *color,
         }
     }
 }
