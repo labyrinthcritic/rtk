@@ -1,8 +1,12 @@
 # rtk
 
-`rtk`: ray-tracing kiwis
+<div align="center">
+  <img src="docs/plane_with_spheres.png" height="200px">
+  <img src="docs/cornell_box.png" height="200px">
+  ray-tracing kiwis
+</div>
 
-This is a software ray-tracer based on the popular books at [raytracing.github.io](https://raytracing.github.io).
+This is a software ray-tracer based on the books at [raytracing.github.io](https://raytracing.github.io).
 
 ## Features
 
