@@ -28,6 +28,7 @@ pub struct Camera {
     pub fov: f64,
     pub focus_distance: f64,
     pub defocus_angle: f64,
+    pub samples_per_pixel: u32,
 }
 
 pub struct Renderer {
@@ -83,7 +84,7 @@ impl Renderer {
 
         (
             Self {
-                samples_per_pixel: 100,
+                samples_per_pixel: camera.samples_per_pixel,
                 background_color: camera.background_color,
                 image_width: camera.image_width,
                 image_height: camera.image_height,

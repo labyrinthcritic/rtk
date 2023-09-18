@@ -1,7 +1,8 @@
 # Ray Tracing: The Next Week, Listing 61
 
 [camera]
-image-dimensions = [400, 400]
+image-dimensions = [1000, 1000]
+samples-per-pixel = 1000
 position = [278.0, 278.0, -800.0]
 rotation = { type = "direction", x = 0.0, y = 0.0, z = 1.0 }
 fov = 40.0
@@ -26,7 +27,19 @@ albedo = [0.12, 0.45, 0.15]
 type = "light"
 color = [15.0, 15.0, 15.0]
 
+# metal
+[[materials]]
+type = "metal"
+albedo = [0.1, 0.1, 0.1]
 
+# glass
+[[materials]]
+type = "dielectric"
+ir = 1.5
+
+
+
+# walls
 
 [[objects]]
 material = 2
@@ -51,3 +64,13 @@ shape = { type = "quad", q = [555.0, 555.0, 555.0], u = [-555.0, 0.0, 0.0], v = 
 [[objects]]
 material = 1
 shape = { type = "quad", q = [0.0, 0.0, 555.0], u = [555.0, 0.0, 0.0], v = [0.0, 555.0, 0.0] }
+
+# boxes
+
+[[objects]]
+material = 5
+shape = { type = "prism", origin = [178, 0.0, 178.0], width = 175.0, height = 175.0, depth = 175.0, rotation = { type = "euler", roll = 0.0, pitch = -0.3, yaw = 0.0 } }
+
+[[objects]]
+material = 4
+shape = { type = "prism", origin = [378.0, 0.0, 378.0], width = 175.0, height = 350.0, depth = 175.0, rotation = { type = "euler", roll = 0.0, pitch = 0.3, yaw = 0.0 } }

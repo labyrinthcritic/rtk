@@ -17,6 +17,7 @@ pub struct Scene {
 pub struct Camera {
     pub image_dimensions: (u32, u32),
     pub background_color: Option<(f64, f64, f64)>,
+    pub samples_per_pixel: Option<u32>,
     pub position: Option<(f64, f64, f64)>,
     pub rotation: Option<Rotation>,
     pub fov: f64,

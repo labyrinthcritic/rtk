@@ -133,6 +133,7 @@ fn create_camera(scene: &Scene) -> Camera {
         fov: scene.camera.fov,
         focus_distance,
         defocus_angle,
+        samples_per_pixel: scene.camera.samples_per_pixel.unwrap_or(100),
     }
 }
 

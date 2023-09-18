@@ -1,5 +1,6 @@
 [camera]
 image-dimensions = [1920, 1080]
+samples-per-pixel = 1000
 position = [0.0, 0.75, 6.0]
 rotation = { type = "euler", roll = -0.1, pitch = 0.0, yaw = 0.0 }
 fov = 40.0
