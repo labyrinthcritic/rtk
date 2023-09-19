@@ -203,7 +203,7 @@ fn hit_quad(
 
     let p = ray.at(t);
     let planar_hit = p - q;
-    let alpha = cache.w.dot(&planar_hit.cross(&v));
+    let alpha = cache.w.dot(&planar_hit.cross(v));
     let beta = cache.w.dot(&u.cross(&planar_hit));
 
     if !((0.0..1.0).contains(&alpha)) || !((0.0..1.0).contains(&beta)) {
