@@ -4,7 +4,7 @@ mod object;
 mod render;
 mod scene;
 
-use std::{rc::Rc, thread, io::Write};
+use std::{rc::Rc, thread};
 
 use nalgebra::{Unit, UnitQuaternion, Vector3};
 use render::Renderer;
