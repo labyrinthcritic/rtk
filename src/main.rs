@@ -4,7 +4,7 @@ mod object;
 mod render;
 mod scene;
 
-use std::{rc::Rc, thread};
+use std::{rc::Rc, thread, io::Write};
 
 use nalgebra::{Unit, UnitQuaternion, Vector3};
 use render::Renderer;
@@ -155,4 +155,19 @@ fn print_progress_bar(progress: u32) {
         eprint!(" ");
     }
     eprint!("] {progress}%");
+    if progress <= 10 {
+        eprint!("    Initializing Systems...                                 ");
+    } else if progress <= 18 {
+        eprint!("    Defragmenting Databases...                              ");
+    } else if progress <= 30 {
+        eprint!("    Mining Crypto...                                        ");
+    } else if progress <= 50 {
+        eprint!("    Rewriting Code...                                       ");
+    } else if progress <= 70 {
+        eprint!("    Reticulating Splines...                                 ");
+    } else if progress <= 85 {
+        eprint!("    Finishing Up...                                         ");
+    } else if progress == 100 {
+        eprint!("    Done!                                                   ");
+    }
 }
