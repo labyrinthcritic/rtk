@@ -127,8 +127,8 @@ impl Renderer {
         self.background_color
     }
 
-    /// Render a complete world, casting several rays for each pixel and collecting them into a complete image.
-    pub fn render(&self, world: &World) -> image::RgbImage {
+    /// Render a complete world, casting several rays for each pixel and collecting colors into a complete image.
+    pub fn render(&self, world: &World, parallel: bool) -> image::RgbImage {
         struct Accumulator {
             pixels_completed: u32,
             progress_percent: u32,
@@ -143,36 +143,42 @@ impl Renderer {
             progress_percent: 0,
         });
 
-        (0..(self.image_width * self.image_height))
-            .into_par_iter()
-            .for_each(|idx| {
-                let i = idx % self.image_width;
-                let j = idx / self.image_width;
+        let pixel_render_fn = |idx| {
+            let i = idx % self.image_width;
+            let j = idx / self.image_width;
 
-                let mut pixel_color = Color::zeros();
+            let mut pixel_color = Color::zeros();
 
-                for _ in 0..self.samples_per_pixel {
-                    let ray = self.get_ray(i, j);
-                    pixel_color += self.ray_color(world, &ray, self.max_ray_bounces);
-                }
+            for _ in 0..self.samples_per_pixel {
+                let ray = self.get_ray(i, j);
+                pixel_color += self.ray_color(world, &ray, self.max_ray_bounces);
+            }
 
-                // Divide to compute the average color between all samples
-                pixel_color /= self.samples_per_pixel as f64;
-                // Gamma correct
-                pixel_color = linear_to_gamma(&pixel_color);
-                let rgb = color_to_rgb(&pixel_color);
+            // Divide to compute the average color between all samples
+            pixel_color /= self.samples_per_pixel as f64;
+            // Gamma correct
+            pixel_color = linear_to_gamma(&pixel_color);
+            let rgb = color_to_rgb(&pixel_color);
 
-                let mut image = image.lock().unwrap();
-                image.put_pixel(i, j, image::Rgb(rgb));
+            let mut image = image.lock().unwrap();
+            image.put_pixel(i, j, image::Rgb(rgb));
 
-                let mut acc = accumulator.lock().unwrap();
-                acc.pixels_completed += 1;
+            let mut acc = accumulator.lock().unwrap();
+            acc.pixels_completed += 1;
 
-                if (acc.pixels_completed * 100 / total_pixels) > acc.progress_percent {
-                    acc.progress_percent = acc.pixels_completed * 100 / total_pixels;
-                    self.progress_sender.send(acc.progress_percent).unwrap();
-                }
-            });
+            if (acc.pixels_completed * 100 / total_pixels) > acc.progress_percent {
+                acc.progress_percent = acc.pixels_completed * 100 / total_pixels;
+                self.progress_sender.send(acc.progress_percent).unwrap();
+            }
+        };
+
+        if parallel {
+            (0..(self.image_width * self.image_height))
+                .into_par_iter()
+                .for_each(pixel_render_fn);
+        } else {
+            (0..(self.image_width * self.image_height)).for_each(pixel_render_fn);
+        }
 
         image.into_inner().unwrap()
     }

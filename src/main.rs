@@ -30,7 +30,7 @@ fn main() {
         let materials = collect_materials(&scene);
         let objects = create_objects(&scene);
 
-        renderer.render(&World { objects, materials })
+        renderer.render(&World { objects, materials }, !cli.no_parallel)
     });
 
     loop {
