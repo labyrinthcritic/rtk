@@ -1,7 +1,11 @@
-use std::{ops::Range, sync::mpsc};
+use std::{
+    ops::Range,
+    sync::{mpsc, Mutex},
+};
 
 use nalgebra::{UnitQuaternion, Vector3};
 use rand::Rng;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::object::World;
 
@@ -125,14 +129,26 @@ impl Renderer {
 
     /// Render a complete world, casting several rays for each pixel and collecting them into a complete image.
     pub fn render(&self, world: &World) -> image::RgbImage {
-        let mut image = image::RgbImage::new(self.image_width, self.image_height);
+        struct Accumulator {
+            pixels_completed: u32,
+            progress_percent: u32,
+        }
+
+        let image = image::RgbImage::new(self.image_width, self.image_height);
+        let image = Mutex::new(image);
 
         let total_pixels = self.image_width * self.image_height;
-        let mut pixels_completed = 0;
-        let mut progress = 0;
+        let accumulator = Mutex::new(Accumulator {
+            pixels_completed: 0,
+            progress_percent: 0,
+        });
 
-        for j in 0..self.image_height {
-            for i in 0..self.image_width {
+        (0..(self.image_width * self.image_height))
+            .into_par_iter()
+            .for_each(|idx| {
+                let i = idx % self.image_width;
+                let j = idx / self.image_width;
+
                 let mut pixel_color = Color::zeros();
 
                 for _ in 0..self.samples_per_pixel {
@@ -146,18 +162,19 @@ impl Renderer {
                 pixel_color = linear_to_gamma(&pixel_color);
                 let rgb = color_to_rgb(&pixel_color);
 
+                let mut image = image.lock().unwrap();
                 image.put_pixel(i, j, image::Rgb(rgb));
 
-                pixels_completed += 1;
+                let mut acc = accumulator.lock().unwrap();
+                acc.pixels_completed += 1;
 
-                if (pixels_completed * 100 / total_pixels) > progress {
-                    progress = pixels_completed * 100 / total_pixels;
-                    self.progress_sender.send(progress).unwrap();
+                if (acc.pixels_completed * 100 / total_pixels) > acc.progress_percent {
+                    acc.progress_percent = acc.pixels_completed * 100 / total_pixels;
+                    self.progress_sender.send(acc.progress_percent).unwrap();
                 }
-            }
-        }
+            });
 
-        image
+        image.into_inner().unwrap()
     }
 
     /// Get a randomly sampled camera ray for the pixel at location (i, j).
