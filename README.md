@@ -1,8 +1,7 @@
 # rtk
 
 <div align="center">
-  <img src="docs/plane_with_spheres.png" height="250px">
-  <img src="docs/cornell_box.png" height="250px">
+  <img src="docs/cornell_box.png" height="400px">
   <br />
   ray-tracing kiwis
   <br />
