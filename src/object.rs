@@ -1,4 +1,4 @@
-use std::{ops::Range, rc::Rc};
+use std::ops::Range;
 
 use nalgebra::{UnitQuaternion, Vector3};
 
@@ -6,6 +6,7 @@ use crate::{material::Material, render::Ray};
 
 pub struct World {
     pub objects: Vec<Object>,
+    pub materials: Vec<Material>,
 }
 
 impl World {
@@ -28,7 +29,7 @@ pub enum Object {
     Sphere {
         center: Vector3<f64>,
         radius: f64,
-        material: Rc<Material>,
+        material: usize,
     },
     Quad {
         /// The point from which the basis vectors extend.
@@ -37,14 +38,14 @@ pub enum Object {
         u: Vector3<f64>,
         /// Second basis vector.
         v: Vector3<f64>,
-        material: Rc<Material>,
+        material: usize,
         /// Data calculated from the other parameters.
         cached: QuadCached,
     },
 }
 
 impl Object {
-    pub fn sphere(center: Vector3<f64>, radius: f64, material: Rc<Material>) -> Self {
+    pub fn sphere(center: Vector3<f64>, radius: f64, material: usize) -> Self {
         Self::Sphere {
             center,
             radius,
@@ -52,7 +53,7 @@ impl Object {
         }
     }
 
-    pub fn quad(q: Vector3<f64>, u: Vector3<f64>, v: Vector3<f64>, material: Rc<Material>) -> Self {
+    pub fn quad(q: Vector3<f64>, u: Vector3<f64>, v: Vector3<f64>, material: usize) -> Self {
         let n = u.cross(&v);
         let normal = n.normalize();
         let d = normal.dot(&q);
@@ -76,7 +77,7 @@ impl Object {
         height: f64,
         depth: f64,
         rotation: &UnitQuaternion<f64>,
-        material: Rc<Material>,
+        material: usize,
     ) -> Vec<Self> {
         let u = rotation * (Vector3::new(1.0, 0.0, 0.0) * width);
         let v = rotation * (Vector3::new(0.0, 1.0, 0.0) * height);
@@ -86,12 +87,12 @@ impl Object {
         let opposite_true_origin = origin + (u / 2.0) + (w / 2.0) + v;
 
         let quads = vec![
-            Object::quad(true_origin, u, v, Rc::clone(&material)),
-            Object::quad(true_origin, v, w, Rc::clone(&material)),
-            Object::quad(true_origin, w, u, Rc::clone(&material)),
-            Object::quad(opposite_true_origin, -u, -v, Rc::clone(&material)),
-            Object::quad(opposite_true_origin, -v, -w, Rc::clone(&material)),
-            Object::quad(opposite_true_origin, -w, -u, Rc::clone(&material)),
+            Object::quad(true_origin, u, v, material),
+            Object::quad(true_origin, v, w, material),
+            Object::quad(true_origin, w, u, material),
+            Object::quad(opposite_true_origin, -u, -v, material),
+            Object::quad(opposite_true_origin, -v, -w, material),
+            Object::quad(opposite_true_origin, -w, -u, material),
         ];
 
         quads
@@ -111,14 +112,14 @@ impl Object {
                 center: origin,
                 radius,
                 material,
-            } => hit_sphere(ray, ray_t, origin, *radius, Rc::clone(material)),
+            } => hit_sphere(ray, ray_t, origin, *radius, *material),
             Object::Quad {
                 q,
                 u,
                 v,
                 material,
                 cached,
-            } => hit_quad(ray, ray_t, q, u, v, Rc::clone(material), cached),
+            } => hit_quad(ray, ray_t, q, u, v, *material, cached),
         }
     }
 }
@@ -133,7 +134,7 @@ pub struct Hit {
     /// Whether the normal points outward or inward.
     pub front_face: bool,
     /// The material of the struck object.
-    pub material: Rc<Material>,
+    pub material: usize,
 }
 
 /// Finds the time at which a ray will hit a sphere, or returns `None` if it will not.
@@ -142,7 +143,7 @@ fn hit_sphere(
     ray_t: Range<f64>,
     center: &Vector3<f64>,
     radius: f64,
-    material: Rc<Material>,
+    material: usize,
 ) -> Option<Hit> {
     // Quadratic formula
     let oc = ray.origin - center;
@@ -187,7 +188,7 @@ fn hit_quad(
     q: &Vector3<f64>,
     u: &Vector3<f64>,
     v: &Vector3<f64>,
-    material: Rc<Material>,
+    material: usize,
     cache: &QuadCached,
 ) -> Option<Hit> {
     let denom = cache.normal.dot(&ray.direction);

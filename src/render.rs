@@ -109,13 +109,14 @@ impl Renderer {
         }
 
         if let Some(hit) = world.hit(ray, 0.001, f64::INFINITY) {
-            if let Some((attenuation, scattered)) = hit.material.scatter(ray, &hit) {
-                let emission = hit.material.emit();
+            let material = &world.materials[hit.material];
+            if let Some((attenuation, scattered)) = material.scatter(ray, &hit) {
+                let emission = material.emit();
                 let scatter =
                     attenuation.component_mul(&self.ray_color(world, &scattered, depth - 1));
                 return emission + scatter;
             } else {
-                return hit.material.emit();
+                return material.emit();
             }
         }
 

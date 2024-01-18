@@ -4,7 +4,7 @@ mod object;
 mod render;
 mod scene;
 
-use std::{rc::Rc, thread};
+use std::thread;
 
 use nalgebra::{Unit, UnitQuaternion, Vector3};
 use render::Renderer;
@@ -28,9 +28,9 @@ fn main() {
 
     let handle = thread::spawn(move || {
         let materials = collect_materials(&scene);
-        let objects = create_objects(&scene, materials.as_slice());
+        let objects = create_objects(&scene);
 
-        renderer.render(&World { objects })
+        renderer.render(&World { objects, materials })
     });
 
     loop {
@@ -47,18 +47,16 @@ fn main() {
     image.save(cli.output).unwrap();
 }
 
-fn collect_materials(scene: &Scene) -> Vec<Rc<Material>> {
+fn collect_materials(scene: &Scene) -> Vec<Material> {
     let mut result = Vec::new();
     for m in scene.materials.iter() {
-        result.push(Rc::new(<scene::Material as Into<Material>>::into(
-            m.clone(),
-        )));
+        result.push(<scene::Material as Into<Material>>::into(m.clone()));
     }
 
     result
 }
 
-fn create_objects(scene: &Scene, materials: &[Rc<Material>]) -> Vec<Object> {
+fn create_objects(scene: &Scene) -> Vec<Object> {
     let mut result = vec![];
 
     for obj in scene.objects.iter() {
@@ -66,13 +64,13 @@ fn create_objects(scene: &Scene, materials: &[Rc<Material>]) -> Vec<Object> {
             scene::Shape::Sphere { center, radius } => result.push(Object::sphere(
                 tuple_to_vector(center),
                 radius,
-                Rc::clone(&materials[obj.material]),
+                obj.material,
             )),
             scene::Shape::Quad { q, u, v } => result.push(Object::quad(
                 tuple_to_vector(q),
                 tuple_to_vector(u),
                 tuple_to_vector(v),
-                Rc::clone(&materials[obj.material]),
+                obj.material,
             )),
             scene::Shape::Prism {
                 origin,
@@ -86,7 +84,7 @@ fn create_objects(scene: &Scene, materials: &[Rc<Material>]) -> Vec<Object> {
                 height,
                 depth,
                 &rotation.clone().unwrap_or_default().into(),
-                Rc::clone(&materials[obj.material]),
+                obj.material,
             )),
         }
     }
