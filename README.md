@@ -7,7 +7,8 @@
   <br />
 </div>
 
-This is a software ray-tracer based on the books at [raytracing.github.io](https://raytracing.github.io).
+This is a software ray-tracer based on the books at
+[raytracing.github.io](https://raytracing.github.io).
 
 ## Features
 
@@ -25,4 +26,18 @@ To render the Cornell box example:
 
 ```sh
 /target/release/rtk examples/cornell_box.toml
+```
+
+### Denoising
+
+`denoise.sh` will quickly denoise an image with
+[Intel Open Image Denoise](https://www.openimagedenoise.org/), the same denoising software used by
+Blender.
+
+On Arch Linux, the requirements are provided by `extra/imagemagick` and `extra/openimagedenoise`.
+
+To denoise `image.png`:
+
+```sh
+./denoise.sh image.png`
 ```
