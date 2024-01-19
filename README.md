@@ -1,7 +1,7 @@
 # rtk
 
 <div align="center">
-  <img src="docs/cornell_box.png" height="400px">
+  <img src="docs/cornell_box.png" height="400px" />
   <br />
   ray-tracing kiwis
   <br />
@@ -39,5 +39,9 @@ On Arch Linux, the requirements are provided by `extra/imagemagick` and `extra/o
 To denoise `image.png`:
 
 ```sh
-./denoise.sh image.png`
+./denoise.sh image.png
 ```
+
+| ![Cornell box](docs/cornell_box.png) | ![Cornell box, denoised](docs/cornell_box_denoised.png) |
+|--|--|
+| Raw | Denoised |
