@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 image_path=$1
 
 magick convert "$image_path" -endian LSB PFM:image.pfm
