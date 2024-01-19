@@ -25,7 +25,7 @@ rtk is an ordinary Cargo project. Run `cargo build --release` or `cargo install 
 To render the Cornell box example:
 
 ```sh
-/target/release/rtk examples/cornell_box.toml
+target/release/rtk examples/cornell_box.toml
 ```
 
 ### Denoising
