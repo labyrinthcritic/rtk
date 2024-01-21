@@ -44,10 +44,10 @@ fn main() {
 
     let image = handle.join().unwrap();
 
-    denoise::denoise(&image).unwrap();
+    let denoised = denoise::denoise(&image);
 
     eprintln!("\nWriting to {}...", cli.output.to_string_lossy());
-    image.save(cli.output).unwrap();
+    denoised.save(cli.output).unwrap();
 }
 
 fn collect_materials(scene: &Scene) -> Vec<Material> {

@@ -1,4 +1,4 @@
-use std::ffi::{c_char, CStr};
+use std::ffi::{c_char, CStr, CString};
 
 pub use oidn_sys as sys;
 
@@ -19,14 +19,14 @@ impl Device {
             let device = sys::oidnNewDevice(sys::OIDNDeviceType_OIDN_DEVICE_TYPE_DEFAULT);
             sys::oidnCommitDevice(device);
 
-            let mut device = Self { device };
+            let device = Self { device };
             device.get_error()?;
 
             Ok(device)
         }
     }
 
-    pub fn get_error(&mut self) -> Result<()> {
+    pub fn get_error(&self) -> Result<()> {
         let mut c_string_ptr: *const c_char = std::ptr::null();
         unsafe {
             if sys::oidnGetDeviceError(self.device, &mut c_string_ptr)
@@ -41,8 +41,12 @@ impl Device {
         Ok(())
     }
 
-    pub fn create_buffer(&mut self, len: usize) -> Result<Buffer> {
+    pub fn create_buffer(&self, len: usize) -> Result<Buffer> {
         Buffer::new(self, len)
+    }
+
+    pub fn create_filter(&self) -> Result<Filter> {
+        Filter::new(self)
     }
 }
 
@@ -54,24 +58,128 @@ impl Drop for Device {
     }
 }
 
-pub struct Buffer {
+pub struct Buffer<'a> {
+    _device: &'a Device,
     buffer: sys::OIDNBuffer,
     len: usize,
 }
 
-impl Buffer {
-    fn new(device: &mut Device, len: usize) -> Result<Self> {
+impl<'a> Buffer<'a> {
+    fn new(device: &'a Device, len: usize) -> Result<Self> {
         unsafe {
             let buffer = sys::oidnNewBuffer(device.device, len * std::mem::size_of::<f32>());
             device.get_error()?;
-            Ok(Buffer { buffer, len })
+            Ok(Buffer {
+                _device: device,
+                buffer,
+                len,
+            })
         }
     }
 
     pub fn as_mut_slice(&mut self) -> &mut [f32] {
         unsafe {
             let buffer_data = sys::oidnGetBufferData(self.buffer);
+            assert!(!buffer_data.is_null());
+
             std::slice::from_raw_parts_mut(buffer_data.cast(), self.len)
+        }
+    }
+}
+
+impl Drop for Buffer<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            sys::oidnReleaseBuffer(self.buffer);
+        }
+    }
+}
+
+pub struct Filter<'a> {
+    device: &'a Device,
+    filter: sys::OIDNFilter,
+    /// This field exists to restrict the lifetime of the filter.
+    color_image: Option<&'a Buffer<'a>>,
+}
+
+impl<'a> Filter<'a> {
+    fn new(device: &'a Device) -> Result<Self> {
+        unsafe {
+            let rt = CString::new("RT").unwrap();
+            let filter = sys::oidnNewFilter(device.device, rt.as_ptr());
+            device.get_error()?;
+            Ok(Filter {
+                device,
+                filter,
+                color_image: None,
+            })
+        }
+    }
+
+    fn set_image(
+        &mut self,
+        buffer: &'a Buffer,
+        width: usize,
+        height: usize,
+        name: &CStr,
+    ) -> Result<()> {
+        unsafe {
+            sys::oidnSetFilterImage(
+                self.filter,
+                name.as_ptr(),
+                buffer.buffer,
+                sys::OIDNFormat_OIDN_FORMAT_FLOAT3,
+                width,
+                height,
+                0,
+                0,
+                0,
+            );
+        }
+
+        self.device.get_error()?;
+
+        self.color_image = Some(buffer);
+
+        Ok(())
+    }
+
+    pub fn set_color_image(
+        &mut self,
+        buffer: &'a Buffer,
+        width: usize,
+        height: usize,
+    ) -> Result<()> {
+        let color = CString::new("color").unwrap();
+        self.set_image(buffer, width, height, &color)
+    }
+
+    pub fn set_output_image(
+        &mut self,
+        buffer: &'a Buffer,
+        width: usize,
+        height: usize,
+    ) -> Result<()> {
+        let color = CString::new("output").unwrap();
+        self.set_image(buffer, width, height, &color)
+    }
+
+    pub fn execute(&self) -> Result<()> {
+        unsafe {
+            sys::oidnCommitFilter(self.filter);
+            self.device.get_error()?;
+            sys::oidnExecuteFilter(self.filter);
+            self.device.get_error()?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Drop for Filter<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            sys::oidnReleaseFilter(self.filter);
         }
     }
 }
