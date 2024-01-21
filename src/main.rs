@@ -1,4 +1,5 @@
 mod cli;
+mod denoise;
 mod material;
 mod object;
 mod render;
@@ -42,6 +43,8 @@ fn main() {
     }
 
     let image = handle.join().unwrap();
+
+    denoise::denoise(&image).unwrap();
 
     eprintln!("\nWriting to {}...", cli.output.to_string_lossy());
     image.save(cli.output).unwrap();
