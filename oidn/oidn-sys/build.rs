@@ -8,5 +8,6 @@ fn main() {
         .generate()
         .unwrap();
 
+    _ = std::fs::create_dir("target");
     bindings.write_to_file("target/bindings.rs").unwrap();
 }

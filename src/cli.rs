@@ -28,4 +28,12 @@ pub enum Command {
         #[arg(short, long)]
         denoise: bool,
     },
+    /// Denoise an image.
+    Denoise {
+        /// Path to the image to denoise.
+        image: PathBuf,
+        /// Path to write the output image to (overwrites input by default).
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
 }

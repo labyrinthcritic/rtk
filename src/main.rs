@@ -28,9 +28,11 @@ fn main() {
             no_parallel,
             denoise,
         } => render(scene.as_path(), output.as_path(), !no_parallel, denoise),
+        cli::Command::Denoise { image, output } => denoise(&image, output.as_deref()),
     }
 }
 
+/// Handle `cli::Command::Render`.
 fn render(scene_path: &Path, output_path: &Path, parallel: bool, denoise: bool) {
     let scene_source = std::fs::read_to_string(scene_path).unwrap();
     let scene: Scene = toml::from_str(&scene_source).unwrap();
@@ -49,6 +51,7 @@ fn render(scene_path: &Path, output_path: &Path, parallel: bool, denoise: bool) 
         let progress = progress_receiver.recv().unwrap();
         print_progress_bar(progress);
         if progress == 100 {
+            eprintln!();
             break;
         }
     }
@@ -56,11 +59,24 @@ fn render(scene_path: &Path, output_path: &Path, parallel: bool, denoise: bool) 
     let mut image = handle.join().unwrap();
 
     if denoise {
+        eprintln!("Denoising...");
         image = denoise::denoise(&image);
     }
 
-    eprintln!("\nWriting to {}...", output_path.display());
+    eprintln!("Writing to {}...", output_path.display());
     image.save(output_path).unwrap();
+}
+
+/// Handle `cli::Command::Denoise`.
+fn denoise(image_path: &Path, output_path: Option<&Path>) {
+    let image = image::io::Reader::open(image_path)
+        .unwrap()
+        .decode()
+        .unwrap()
+        .to_rgb8();
+    eprintln!("Denoising {}...", image_path.display());
+    let denoised = denoise::denoise(&image);
+    denoised.save(output_path.unwrap_or(image_path)).unwrap();
 }
 
 fn collect_materials(scene: &Scene) -> Vec<Material> {
