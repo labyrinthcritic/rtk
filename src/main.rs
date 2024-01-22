@@ -26,11 +26,12 @@ fn main() {
             output,
             parallel: _,
             no_parallel,
-        } => render(scene.as_path(), output.as_path(), !no_parallel),
+            denoise,
+        } => render(scene.as_path(), output.as_path(), !no_parallel, denoise),
     }
 }
 
-fn render(scene_path: &Path, output_path: &Path, parallel: bool) {
+fn render(scene_path: &Path, output_path: &Path, parallel: bool, denoise: bool) {
     let scene_source = std::fs::read_to_string(scene_path).unwrap();
     let scene: Scene = toml::from_str(&scene_source).unwrap();
 
@@ -52,12 +53,14 @@ fn render(scene_path: &Path, output_path: &Path, parallel: bool) {
         }
     }
 
-    let image = handle.join().unwrap();
+    let mut image = handle.join().unwrap();
 
-    let denoised = denoise::denoise(&image);
+    if denoise {
+        image = denoise::denoise(&image);
+    }
 
     eprintln!("\nWriting to {}...", output_path.display());
-    denoised.save(output_path).unwrap();
+    image.save(output_path).unwrap();
 }
 
 fn collect_materials(scene: &Scene) -> Vec<Material> {

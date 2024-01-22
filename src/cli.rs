@@ -24,5 +24,8 @@ pub enum Command {
         /// Render only on the main thread.
         #[arg(long, group = "parallel_option")]
         no_parallel: bool,
+        /// Denoise the image after rendering.
+        #[arg(short, long)]
+        denoise: bool,
     },
 }
