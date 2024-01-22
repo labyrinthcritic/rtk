@@ -20,7 +20,7 @@ This is a software ray-tracer based on the books at
 
 ## Usage
 
-rtk is an ordinary Cargo project. Run `cargo build --release` or `cargo install --path .`.
+Run `cargo build --release` or `cargo install --path .`.
 
 To render the Cornell box example:
 
@@ -28,13 +28,18 @@ To render the Cornell box example:
 rtk render examples/cornell_box.toml
 ```
 
+### Dependencies
+
+The denoising features are provided by [openimagedenoise](https://www.openimagedenoise.org/)
+(libOpenImageDenoise.so), the same denoising software used by Blender.
+
+To disable denoising and this dependency, build the project without the `denoise` feature, i.e:
+
+```sh
+cargo build --release --no-default-features
+```
+
 ### Denoising
-
-`rtk denoise` will quickly denoise an image with
-[Intel Open Image Denoise](https://www.openimagedenoise.org/), the same denoising software used by
-Blender.
-
-On Arch Linux, the requirements are provided by `extra/imagemagick` and `extra/openimagedenoise`.
 
 To denoise `image.png`:
 
