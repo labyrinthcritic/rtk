@@ -25,12 +25,12 @@ rtk is an ordinary Cargo project. Run `cargo build --release` or `cargo install 
 To render the Cornell box example:
 
 ```sh
-target/release/rtk examples/cornell_box.toml
+rtk render examples/cornell_box.toml
 ```
 
 ### Denoising
 
-`denoise.sh` will quickly denoise an image with
+`rtk denoise` will quickly denoise an image with
 [Intel Open Image Denoise](https://www.openimagedenoise.org/), the same denoising software used by
 Blender.
 
@@ -39,8 +39,10 @@ On Arch Linux, the requirements are provided by `extra/imagemagick` and `extra/o
 To denoise `image.png`:
 
 ```sh
-./denoise.sh image.png
+rtk denoise image.png
 ```
+
+Alternatively, specify `--denoise` with `rtk render` to denoise the result before it is written.
 
 | Raw | Denoised |
 |:-:|:-:|
