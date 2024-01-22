@@ -21,9 +21,7 @@ pub fn denoise(image: &ImageBuffer<Rgb<u8>, Vec<u8>>) -> ImageBuffer<Rgb<u8>, Ve
     }
 
     let mut result_pfm = vec![0.0; image.pixels().len() * 3];
-    result_pfm
-        .as_mut_slice()
-        .copy_from_slice(buffer.as_mut_slice());
+    result_pfm.as_mut_slice().copy_from_slice(buffer.as_slice());
 
     create_image(
         result_pfm.as_slice(),

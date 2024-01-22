@@ -77,7 +77,16 @@ impl<'a> Buffer<'a> {
         }
     }
 
-    pub fn as_mut_slice(&mut self) -> &mut [f32] {
+    pub fn as_slice(&mut self) -> &'a [f32] {
+        unsafe {
+            let buffer_data = sys::oidnGetBufferData(self.buffer);
+            assert!(!buffer_data.is_null());
+
+            std::slice::from_raw_parts(buffer_data.cast(), self.len)
+        }
+    }
+
+    pub fn as_mut_slice(&mut self) -> &'a mut [f32] {
         unsafe {
             let buffer_data = sys::oidnGetBufferData(self.buffer);
             assert!(!buffer_data.is_null());

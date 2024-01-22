@@ -5,7 +5,7 @@ mod object;
 mod render;
 mod scene;
 
-use std::thread;
+use std::{path::Path, thread};
 
 use nalgebra::{Unit, UnitQuaternion, Vector3};
 use render::Renderer;
@@ -20,7 +20,17 @@ use crate::{
 fn main() {
     let cli = <cli::Cli as clap::Parser>::parse();
 
-    let scene_path = cli.scene;
+    match cli.command {
+        cli::Command::Render {
+            scene,
+            output,
+            parallel: _,
+            no_parallel,
+        } => render(scene.as_path(), output.as_path(), !no_parallel),
+    }
+}
+
+fn render(scene_path: &Path, output_path: &Path, parallel: bool) {
     let scene_source = std::fs::read_to_string(scene_path).unwrap();
     let scene: Scene = toml::from_str(&scene_source).unwrap();
 
@@ -31,7 +41,7 @@ fn main() {
         let materials = collect_materials(&scene);
         let objects = create_objects(&scene);
 
-        renderer.render(&World { objects, materials }, !cli.no_parallel)
+        renderer.render(&World { objects, materials }, parallel)
     });
 
     loop {
@@ -46,8 +56,8 @@ fn main() {
 
     let denoised = denoise::denoise(&image);
 
-    eprintln!("\nWriting to {}...", cli.output.to_string_lossy());
-    denoised.save(cli.output).unwrap();
+    eprintln!("\nWriting to {}...", output_path.display());
+    denoised.save(output_path).unwrap();
 }
 
 fn collect_materials(scene: &Scene) -> Vec<Material> {
