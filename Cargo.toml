@@ -21,6 +21,8 @@ rayon = "1.8.1"
 serde = { version = "1.0.195", features = ["derive"] }
 toml = "0.8.8"
 oidn = { path = "./oidn", optional = true }
+anyhow = "1.0.79"
+colored = "2.1.0"
 
 [features]
 default = ["denoise"]

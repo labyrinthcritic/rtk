@@ -8,17 +8,24 @@ mod scene;
 
 use std::{path::Path, thread};
 
+use colored::Colorize;
 use nalgebra::{Unit, UnitQuaternion, Vector3};
-use render::Renderer;
 
 use crate::{
     material::Material,
     object::{Object, World},
-    render::Camera,
+    render::{Camera, Renderer},
     scene::Scene,
 };
 
 fn main() {
+    if let Err(e) = run_cli() {
+        eprintln!("{}: {}", "error".bold().red(), e);
+        std::process::exit(1);
+    }
+}
+
+fn run_cli() -> anyhow::Result<()> {
     let cli = <cli::Cli as clap::Parser>::parse();
 
     match cli.command {
@@ -31,19 +38,26 @@ fn main() {
             denoise,
         } => {
             #[cfg(feature = "denoise")]
-            render(scene.as_path(), output.as_path(), !no_parallel, denoise);
+            render(scene.as_path(), output.as_path(), !no_parallel, denoise)?;
             #[cfg(not(feature = "denoise"))]
-            render(scene.as_path(), output.as_path(), !no_parallel, false);
+            render(scene.as_path(), output.as_path(), !no_parallel, false)?;
         }
         #[cfg(feature = "denoise")]
         cli::Command::Denoise { image, output } => denoise(&image, output.as_deref()),
     }
+
+    Ok(())
 }
 
 /// Handle `cli::Command::Render`.
-fn render(scene_path: &Path, output_path: &Path, parallel: bool, _denoise: bool) {
-    let scene_source = std::fs::read_to_string(scene_path).unwrap();
-    let scene: Scene = toml::from_str(&scene_source).unwrap();
+fn render(
+    scene_path: &Path,
+    output_path: &Path,
+    parallel: bool,
+    _denoise: bool,
+) -> anyhow::Result<()> {
+    let scene_source = std::fs::read_to_string(scene_path)?;
+    let scene: Scene = toml::from_str(&scene_source)?;
 
     let camera = create_camera(&scene);
     let (renderer, progress_receiver) = Renderer::new(camera);
@@ -56,7 +70,7 @@ fn render(scene_path: &Path, output_path: &Path, parallel: bool, _denoise: bool)
     });
 
     loop {
-        let progress = progress_receiver.recv().unwrap();
+        let progress = progress_receiver.recv()?;
         print_progress_bar(progress);
         if progress == 100 {
             eprintln!();
@@ -64,7 +78,9 @@ fn render(scene_path: &Path, output_path: &Path, parallel: bool, _denoise: bool)
         }
     }
 
-    let image = handle.join().unwrap();
+    let image = handle
+        .join()
+        .map_err(|e| anyhow::anyhow!("the rendering thread panicked:\n{:#?}", e))?;
 
     #[cfg(feature = "denoise")]
     let image = if _denoise {
@@ -75,20 +91,20 @@ fn render(scene_path: &Path, output_path: &Path, parallel: bool, _denoise: bool)
     };
 
     eprintln!("Writing to {}...", output_path.display());
-    image.save(output_path).unwrap();
+    image.save(output_path)?;
+
+    Ok(())
 }
 
 #[cfg(feature = "denoise")]
 /// Handle `cli::Command::Denoise`.
-fn denoise(image_path: &Path, output_path: Option<&Path>) {
-    let image = image::io::Reader::open(image_path)
-        .unwrap()
-        .decode()
-        .unwrap()
-        .to_rgb8();
+fn denoise(image_path: &Path, output_path: Option<&Path>) -> anyhow::Result<()> {
+    let image = image::io::Reader::open(image_path)?.decode()?.to_rgb8();
     eprintln!("Denoising {}...", image_path.display());
     let denoised = denoise::denoise(&image);
-    denoised.save(output_path.unwrap_or(image_path)).unwrap();
+    denoised.save(output_path.unwrap_or(image_path))?;
+
+    Ok(())
 }
 
 fn collect_materials(scene: &Scene) -> Vec<Material> {
