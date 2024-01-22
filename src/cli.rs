@@ -24,10 +24,12 @@ pub enum Command {
         /// Render only on the main thread.
         #[arg(long, group = "parallel_option")]
         no_parallel: bool,
+        #[cfg(feature = "denoise")]
         /// Denoise the image after rendering.
         #[arg(short, long)]
         denoise: bool,
     },
+    #[cfg(feature = "denoise")]
     /// Denoise an image.
     Denoise {
         /// Path to the image to denoise.

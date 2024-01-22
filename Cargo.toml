@@ -20,4 +20,8 @@ rand = "0.8.5"
 rayon = "1.8.1"
 serde = { version = "1.0.195", features = ["derive"] }
 toml = "0.8.8"
-oidn = { path = "./oidn" }
+oidn = { path = "./oidn", optional = true }
+
+[features]
+default = ["denoise"]
+denoise = ["oidn"]

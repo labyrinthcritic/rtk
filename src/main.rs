@@ -1,4 +1,5 @@
 mod cli;
+#[cfg(feature = "denoise")]
 mod denoise;
 mod material;
 mod object;
@@ -26,14 +27,21 @@ fn main() {
             output,
             parallel: _,
             no_parallel,
+            #[cfg(feature = "denoise")]
             denoise,
-        } => render(scene.as_path(), output.as_path(), !no_parallel, denoise),
+        } => {
+            #[cfg(feature = "denoise")]
+            render(scene.as_path(), output.as_path(), !no_parallel, denoise);
+            #[cfg(not(feature = "denoise"))]
+            render(scene.as_path(), output.as_path(), !no_parallel, false);
+        }
+        #[cfg(feature = "denoise")]
         cli::Command::Denoise { image, output } => denoise(&image, output.as_deref()),
     }
 }
 
 /// Handle `cli::Command::Render`.
-fn render(scene_path: &Path, output_path: &Path, parallel: bool, denoise: bool) {
+fn render(scene_path: &Path, output_path: &Path, parallel: bool, _denoise: bool) {
     let scene_source = std::fs::read_to_string(scene_path).unwrap();
     let scene: Scene = toml::from_str(&scene_source).unwrap();
 
@@ -56,17 +64,21 @@ fn render(scene_path: &Path, output_path: &Path, parallel: bool, denoise: bool) 
         }
     }
 
-    let mut image = handle.join().unwrap();
+    let image = handle.join().unwrap();
 
-    if denoise {
+    #[cfg(feature = "denoise")]
+    let image = if _denoise {
         eprintln!("Denoising...");
-        image = denoise::denoise(&image);
-    }
+        denoise::denoise(&image)
+    } else {
+        image
+    };
 
     eprintln!("Writing to {}...", output_path.display());
     image.save(output_path).unwrap();
 }
 
+#[cfg(feature = "denoise")]
 /// Handle `cli::Command::Denoise`.
 fn denoise(image_path: &Path, output_path: Option<&Path>) {
     let image = image::io::Reader::open(image_path)
