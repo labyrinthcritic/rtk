@@ -43,7 +43,7 @@ fn run_cli() -> anyhow::Result<()> {
             render(scene.as_path(), output.as_path(), !no_parallel, false)?;
         }
         #[cfg(feature = "denoise")]
-        cli::Command::Denoise { image, output } => denoise(&image, output.as_deref()),
+        cli::Command::Denoise { image, output } => denoise(&image, output.as_deref())?,
     }
 
     Ok(())
@@ -85,7 +85,7 @@ fn render(
     #[cfg(feature = "denoise")]
     let image = if _denoise {
         eprintln!("Denoising...");
-        denoise::denoise(&image)
+        denoise::denoise(&image)?
     } else {
         image
     };
@@ -101,7 +101,7 @@ fn render(
 fn denoise(image_path: &Path, output_path: Option<&Path>) -> anyhow::Result<()> {
     let image = image::io::Reader::open(image_path)?.decode()?.to_rgb8();
     eprintln!("Denoising {}...", image_path.display());
-    let denoised = denoise::denoise(&image);
+    let denoised = denoise::denoise(&image)?;
     denoised.save(output_path.unwrap_or(image_path))?;
 
     Ok(())

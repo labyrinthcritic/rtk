@@ -1,33 +1,31 @@
 use image::{ImageBuffer, Rgb};
 
-pub fn denoise(image: &ImageBuffer<Rgb<u8>, Vec<u8>>) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
-    let device = oidn::Device::new().unwrap();
-    let mut buffer = device.create_buffer(image.pixels().len() * 3).unwrap();
+pub fn denoise(
+    image: &ImageBuffer<Rgb<u8>, Vec<u8>>,
+) -> anyhow::Result<ImageBuffer<Rgb<u8>, Vec<u8>>> {
+    let device = oidn::Device::new()?;
+    let mut buffer = device.create_buffer(image.pixels().len() * 3)?;
 
     let pfm_image = create_pfm(image);
 
     buffer.as_mut_slice().copy_from_slice(&pfm_image);
 
     {
-        let mut filter = device.create_filter().unwrap();
-        filter
-            .set_color_image(&buffer, image.width() as usize, image.height() as usize)
-            .unwrap();
-        filter
-            .set_output_image(&buffer, image.width() as usize, image.height() as usize)
-            .unwrap();
+        let mut filter = device.create_filter()?;
+        filter.set_color_image(&buffer, image.width() as usize, image.height() as usize)?;
+        filter.set_output_image(&buffer, image.width() as usize, image.height() as usize)?;
 
-        filter.execute().unwrap();
+        filter.execute()?;
     }
 
     let mut result_pfm = vec![0.0; image.pixels().len() * 3];
     result_pfm.as_mut_slice().copy_from_slice(buffer.as_slice());
 
-    create_image(
+    Ok(create_image(
         result_pfm.as_slice(),
         image.width() as usize,
         image.height() as usize,
-    )
+    ))
 }
 
 fn create_pfm(image: &ImageBuffer<Rgb<u8>, Vec<u8>>) -> Vec<f32> {

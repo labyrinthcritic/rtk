@@ -2,10 +2,25 @@ use std::ffi::{c_char, CStr, CString};
 
 pub use oidn_sys as sys;
 
-#[derive(Clone, Debug)]
+/// Any error reported by the device.
+#[derive(Clone)]
 pub struct Error {
     pub message: String,
 }
+
+impl std::fmt::Debug for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        <Self as std::fmt::Debug>::fmt(self, f)
+    }
+}
+
+impl std::error::Error for Error {}
 
 pub type Result<T> = std::result::Result<T, Error>;
 
